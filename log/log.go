@@ -32,7 +32,7 @@ import (
 func SetupGlobalLogger(level string) error {
 	logrus.SetFormatter(&logrus.TextFormatter{
 		DisableTimestamp: true,
-		ForceColors:      true,
+		ForceColors:      false,
 	})
 
 	lvl, err := logrus.ParseLevel(level)
