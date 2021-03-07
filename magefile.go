@@ -24,6 +24,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/carolynvs/magex/pkg"
 	"github.com/magefile/mage/mg"
 
 	"sigs.k8s.io/release-utils/mage"
@@ -42,33 +43,33 @@ var boilerplateDir = filepath.Join(scriptDir, "boilerplate")
 
 // Verify runs repository verification scripts
 func Verify() error {
+	fmt.Println("Ensuring mage is available...")
+	if err := pkg.EnsureMage(""); err != nil {
+		return err
+	}
+
 	fmt.Println("Running copyright header checks...")
-	err := mage.VerifyBoilerplate("", binDir, boilerplateDir, false)
-	if err != nil {
+	if err := mage.VerifyBoilerplate("", binDir, boilerplateDir, false); err != nil {
 		return err
 	}
 
 	fmt.Println("Running external dependency checks...")
-	err = mage.VerifyDeps("", "", "", true)
-	if err != nil {
+	if err := mage.VerifyDeps("", "", "", true); err != nil {
 		return err
 	}
 
 	fmt.Println("Running go module linter...")
-	err = mage.VerifyGoMod(scriptDir)
-	if err != nil {
+	if err := mage.VerifyGoMod(scriptDir); err != nil {
 		return err
 	}
 
 	fmt.Println("Running golangci-lint...")
-	err = mage.RunGolangCILint("", false)
-	if err != nil {
+	if err := mage.RunGolangCILint("", false); err != nil {
 		return err
 	}
 
 	fmt.Println("Running go build...")
-	err = mage.VerifyBuild(scriptDir)
-	if err != nil {
+	if err := mage.VerifyBuild(scriptDir); err != nil {
 		return err
 	}
 
