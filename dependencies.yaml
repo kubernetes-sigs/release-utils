@@ -1,0 +1,14 @@
+dependencies:
+  # k8s.io/repo-infra
+  - name: "repo-infra"
+    version: 0.1.1
+    refPaths:
+    - path: scripts/verify-boilerplate.sh
+      match: VERSION=v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?
+
+  # sigs.k8s.io/zeitgeist
+  - name: "zeitgeist"
+    version: 0.0.17
+    refPaths:
+    - path: scripts/verify-dependencies.sh
+      match: VERSION=(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?
