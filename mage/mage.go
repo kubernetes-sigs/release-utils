@@ -173,18 +173,15 @@ func VerifyDeps(scriptDir string) error {
 	return nil
 }
 
-// VerifyGoMod run the go module linter
+// VerifyGoMod runs `go mod tidy` and `git diff --exit-code go.*` to ensure
+// all module updates have been checked in.
 func VerifyGoMod(scriptDir string) error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrap(err, "getting working directory")
+	if err := shx.RunV("go", "mod", "tidy"); err != nil {
+		return errors.Wrap(err, "running go mod tidy")
 	}
 
-	scriptDir = filepath.Join(wd, scriptDir)
-
-	goModScript := filepath.Join(scriptDir, "verify-go-mod.sh")
-	if err := shx.RunV(goModScript); err != nil {
-		return errors.Wrap(err, "running go module linter")
+	if err := shx.RunV("git", "diff", "--exit-code", "go.*"); err != nil {
+		return errors.Wrap(err, "running go mod tidy")
 	}
 
 	return nil
