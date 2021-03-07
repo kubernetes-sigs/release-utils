@@ -6,6 +6,13 @@ dependencies:
     - path: scripts/verify-boilerplate.sh
       match: VERSION=v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?
 
+  # golangci/golangci-lint
+  - name: "golangci-lint"
+    version: 1.38.0
+    refPaths:
+    - path: mage/mage.go
+      match: defaultGolangCILintVersion\s+=\s+"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
+
   # sigs.k8s.io/zeitgeist
   - name: "zeitgeist"
     version: 0.0.17
