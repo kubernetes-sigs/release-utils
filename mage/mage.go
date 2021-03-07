@@ -35,11 +35,44 @@ import (
 )
 
 const (
+	// golangci-lint
 	defaultGolangCILintVersion = "v1.38.0"
 	golangciCmd                = "golangci-lint"
 	golangciConfig             = ".golangci.yml"
 	golangciURLBase            = "https://raw.githubusercontent.com/golangci/golangci-lint"
+
+	// zeitgeist
+	defaultZeitgeistVersion = "v0.2.0"
+	zeitgeistCmd            = "zeitgeist"
+	zeitgeistModule         = "sigs.k8s.io/zeitgeist"
 )
+
+// Ensure zeitgeist is installed and on the PATH.
+func EnsureZeitgeist(version string) error {
+	if version == "" {
+		log.Printf(
+			"A zeitgeist version to install was not specified. Using default version: %s",
+			defaultZeitgeistVersion,
+		)
+
+		version = defaultZeitgeistVersion
+	}
+
+	_, err := semver.ParseTolerant(version)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"%s was not SemVer-compliant. Cannot continue.",
+			version,
+		)
+	}
+
+	if err := pkg.EnsurePackage(zeitgeistModule, defaultZeitgeistVersion); err != nil {
+		return errors.Wrap(err, "ensuring package")
+	}
+
+	return nil
+}
 
 // RunGolangCILint runs all golang linters
 func RunGolangCILint(version string, forceInstall bool, args ...string) error {
@@ -157,17 +190,26 @@ func VerifyBoilerplate(scriptDir string) error {
 }
 
 // VerifyDeps runs zeitgeist to verify dependency versions
-func VerifyDeps(scriptDir string) error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrap(err, "getting working directory")
+func VerifyDeps(version, basePath, configPath string, localOnly bool) error {
+	if err := EnsureZeitgeist(version); err != nil {
+		return errors.Wrap(err, "ensuring zeitgeist is installed")
 	}
 
-	scriptDir = filepath.Join(wd, scriptDir)
+	args := []string{"validate"}
+	if localOnly {
+		args = append(args, "--local")
+	}
 
-	dependenciesScript := filepath.Join(scriptDir, "verify-dependencies.sh")
-	if err := shx.RunV(dependenciesScript); err != nil {
-		return errors.Wrap(err, "running external dependencies check")
+	if basePath != "" {
+		args = append(args, "--base-path", basePath)
+	}
+
+	if configPath != "" {
+		args = append(args, "--config", configPath)
+	}
+
+	if err := shx.RunV(zeitgeistCmd, args...); err != nil {
+		return errors.Wrap(err, "running zeitgeist")
 	}
 
 	return nil

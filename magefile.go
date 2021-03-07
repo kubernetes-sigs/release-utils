@@ -43,7 +43,7 @@ func Verify() error {
 	}
 
 	fmt.Println("Running external dependency checks...")
-	err = mage.VerifyDeps(scriptDir)
+	err = mage.VerifyDeps("", "", "", true)
 	if err != nil {
 		return err
 	}
