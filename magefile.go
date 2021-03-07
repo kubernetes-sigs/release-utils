@@ -24,11 +24,22 @@ import (
 	"os/exec"
 
 	"github.com/magefile/mage/mg" // mg contains helpful utility functions, like Deps
+
+	"sigs.k8s.io/release-utils/mage"
 )
 
 // Default target to run when none is specified
 // If not set, running mage will list available targets
-// var Default = Build
+var Default = Verify
+
+const scriptDir = "scripts"
+
+// Verify runs repository verification scripts
+func Verify() error {
+	return mage.Verify(scriptDir)
+}
+
+// Default targets
 
 // A build step that requires additional params, or platform specific steps for example
 func Build() error {
