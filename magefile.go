@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/magefile/mage/mg"
 
@@ -32,12 +33,17 @@ import (
 // If not set, running mage will list available targets
 var Default = Verify
 
-const scriptDir = "scripts"
+const (
+	binDir    = "bin"
+	scriptDir = "scripts"
+)
+
+var boilerplateDir = filepath.Join(scriptDir, "boilerplate")
 
 // Verify runs repository verification scripts
 func Verify() error {
 	fmt.Println("Running copyright header checks...")
-	err := mage.VerifyBoilerplate(scriptDir)
+	err := mage.VerifyBoilerplate("", binDir, boilerplateDir, false)
 	if err != nil {
 		return err
 	}

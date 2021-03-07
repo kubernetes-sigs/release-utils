@@ -41,11 +41,87 @@ const (
 	golangciConfig             = ".golangci.yml"
 	golangciURLBase            = "https://raw.githubusercontent.com/golangci/golangci-lint"
 
+	// repo-infra (used for boilerplate script)
+	defaultRepoInfraVersion = "v0.2.1"
+	repoInfraURLBase        = "https://raw.githubusercontent.com/kubernetes/repo-infra"
+
 	// zeitgeist
 	defaultZeitgeistVersion = "v0.2.0"
 	zeitgeistCmd            = "zeitgeist"
 	zeitgeistModule         = "sigs.k8s.io/zeitgeist"
 )
+
+// EnsureBoilerplateScript downloads copyright header boilerplate script, if
+// not already present in the repository.
+func EnsureBoilerplateScript(version, boilerplateScript string, forceInstall bool) error {
+	found, err := kpath.Exists(kpath.CheckSymlinkOnly, boilerplateScript)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"checking if copyright header boilerplate script (%s) exists",
+			boilerplateScript,
+		)
+	}
+
+	if !found || forceInstall {
+		if version == "" {
+			log.Printf(
+				"A verify_boilerplate.py version to install was not specified. Using default version: %s",
+				defaultRepoInfraVersion,
+			)
+
+			version = defaultRepoInfraVersion
+		}
+
+		if !strings.HasPrefix(version, "v") {
+			return errors.New(
+				fmt.Sprintf(
+					"repo-infra version (%s) must begin with a 'v'",
+					version,
+				),
+			)
+		}
+
+		if _, err := semver.ParseTolerant(version); err != nil {
+			return errors.Wrapf(
+				err,
+				"%s was not SemVer-compliant. Cannot continue.",
+				version,
+			)
+		}
+
+		installURL, err := url.Parse(repoInfraURLBase)
+		if err != nil {
+			return errors.Wrap(err, "parsing URL")
+		}
+
+		installURL.Path = path.Join(
+			installURL.Path,
+			version,
+			"hack",
+			"verify_boilerplate.py",
+		)
+
+		installCmd := command.New(
+			"curl",
+			"-sSfL",
+			installURL.String(),
+			"-o",
+			boilerplateScript,
+		)
+
+		err = installCmd.RunSuccess()
+		if err != nil {
+			return errors.Wrap(err, "installing verify_boilerplate.py")
+		}
+	}
+
+	if err := os.Chmod(boilerplateScript, 0755); err != nil {
+		return errors.Wrap(err, "making script executable")
+	}
+
+	return nil
+}
 
 // Ensure golangci-lint is installed and on the PATH.
 func EnsureGolangCILint(version string, forceInstall bool) error {
@@ -101,7 +177,7 @@ func EnsureGolangCILint(version string, forceInstall bool) error {
 		installCmd := command.New(
 			"curl",
 			"-sSfL",
-			installURL.Path,
+			installURL.String(),
 		).Pipe(
 			"sh",
 			"-s",
@@ -179,16 +255,26 @@ func RunGolangCILint(version string, forceInstall bool, args ...string) error {
 }
 
 // VerifyBoilerplate runs copyright header checks
-func VerifyBoilerplate(scriptDir string) error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrap(err, "getting working directory")
+func VerifyBoilerplate(version, binDir, boilerplateDir string, forceInstall bool) error {
+	if _, err := kpath.Exists(kpath.CheckSymlinkOnly, boilerplateDir); err != nil {
+		return errors.Wrapf(
+			err,
+			"checking if copyright header boilerplate directory (%s) exists",
+			boilerplateDir,
+		)
 	}
 
-	scriptDir = filepath.Join(wd, scriptDir)
+	boilerplateScript := filepath.Join(binDir, "verify_boilerplate.py")
 
-	boilerplateScript := filepath.Join(scriptDir, "verify-boilerplate.sh")
-	if err := shx.RunV(boilerplateScript); err != nil {
+	if err := EnsureBoilerplateScript(version, boilerplateScript, forceInstall); err != nil {
+		return errors.Wrap(err, "ensuring copyright header script is installed")
+	}
+
+	if err := shx.RunV(
+		boilerplateScript,
+		"--boilerplate-dir",
+		boilerplateDir,
+	); err != nil {
 		return errors.Wrap(err, "running copyright header checks")
 	}
 
