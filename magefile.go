@@ -23,7 +23,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/magefile/mage/mg" // mg contains helpful utility functions, like Deps
+	"github.com/magefile/mage/mg"
 
 	"sigs.k8s.io/release-utils/mage"
 )
@@ -36,7 +36,37 @@ const scriptDir = "scripts"
 
 // Verify runs repository verification scripts
 func Verify() error {
-	return mage.Verify(scriptDir)
+	fmt.Println("Running copyright header checks...")
+	err := mage.VerifyBoilerplate(scriptDir)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Running external dependency checks...")
+	err = mage.VerifyDeps(scriptDir)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Running go module linter...")
+	err = mage.VerifyGoMod(scriptDir)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Running golangci-lint...")
+	err = mage.RunGolangCILint("", false)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Running go build...")
+	err = mage.VerifyBuild(scriptDir)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Default targets
