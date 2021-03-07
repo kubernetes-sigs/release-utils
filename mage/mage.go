@@ -254,6 +254,36 @@ func RunGolangCILint(version string, forceInstall bool, args ...string) error {
 	return nil
 }
 
+func TestGo(verbose bool, pkgs ...string) error {
+	verboseFlag := ""
+	if verbose {
+		verboseFlag = "-v"
+	}
+
+	pkgArgs := []string{}
+	if len(pkgs) > 0 {
+		for _, p := range pkgs {
+			pkgArg := fmt.Sprintf("./%s/...", p)
+			pkgArgs = append(pkgArgs, pkgArg)
+		}
+	} else {
+		pkgArgs = []string{"./..."}
+	}
+
+	cmdArgs := []string{"test"}
+	cmdArgs = append(cmdArgs, verboseFlag)
+	cmdArgs = append(cmdArgs, pkgArgs...)
+
+	if err := shx.RunV(
+		"go",
+		cmdArgs...,
+	); err != nil {
+		return errors.Wrap(err, "running go test")
+	}
+
+	return nil
+}
+
 // VerifyBoilerplate runs copyright header checks
 func VerifyBoilerplate(version, binDir, boilerplateDir string, forceInstall bool) error {
 	if _, err := kpath.Exists(kpath.CheckSymlinkOnly, boilerplateDir); err != nil {

@@ -20,12 +20,9 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/carolynvs/magex/pkg"
-	"github.com/magefile/mage/mg"
 
 	"sigs.k8s.io/release-utils/mage"
 )
@@ -40,6 +37,28 @@ const (
 )
 
 var boilerplateDir = filepath.Join(scriptDir, "boilerplate")
+
+// All runs all targets for this repository
+func All() error {
+	if err := Verify(); err != nil {
+		return err
+	}
+
+	if err := Test(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Test runs various test functions
+func Test() error {
+	if err := mage.TestGo(true); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // Verify runs repository verification scripts
 func Verify() error {
@@ -74,34 +93,4 @@ func Verify() error {
 	}
 
 	return nil
-}
-
-// Default targets
-
-// A build step that requires additional params, or platform specific steps for example
-func Build() error {
-	mg.Deps(InstallDeps)
-	fmt.Println("Building...")
-	cmd := exec.Command("go", "build", "-o", "MyApp", ".")
-	return cmd.Run()
-}
-
-// A custom install step if you need your bin someplace other than go/bin
-func Install() error {
-	mg.Deps(Build)
-	fmt.Println("Installing...")
-	return os.Rename("./MyApp", "/usr/bin/MyApp")
-}
-
-// Manage your deps, or running package managers.
-func InstallDeps() error {
-	fmt.Println("Installing Deps...")
-	cmd := exec.Command("go", "get", "github.com/stretchr/piglatin")
-	return cmd.Run()
-}
-
-// Clean up after yourself
-func Clean() {
-	fmt.Println("Cleaning...")
-	os.RemoveAll("MyApp")
 }
