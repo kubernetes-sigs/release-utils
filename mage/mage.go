@@ -47,44 +47,8 @@ const (
 	zeitgeistModule         = "sigs.k8s.io/zeitgeist"
 )
 
-// Ensure zeitgeist is installed and on the PATH.
-func EnsureZeitgeist(version string) error {
-	if version == "" {
-		log.Printf(
-			"A zeitgeist version to install was not specified. Using default version: %s",
-			defaultZeitgeistVersion,
-		)
-
-		version = defaultZeitgeistVersion
-	}
-
-	_, err := semver.ParseTolerant(version)
-	if err != nil {
-		return errors.Wrapf(
-			err,
-			"%s was not SemVer-compliant. Cannot continue.",
-			version,
-		)
-	}
-
-	if err := pkg.EnsurePackage(zeitgeistModule, defaultZeitgeistVersion); err != nil {
-		return errors.Wrap(err, "ensuring package")
-	}
-
-	return nil
-}
-
-// RunGolangCILint runs all golang linters
-func RunGolangCILint(version string, forceInstall bool, args ...string) error {
-	_, err := kpath.Exists(kpath.CheckSymlinkOnly, golangciConfig)
-	if err != nil {
-		return errors.Wrapf(
-			err,
-			"checking if golangci-lint config file (%s) exists",
-			golangciConfig,
-		)
-	}
-
+// Ensure golangci-lint is installed and on the PATH.
+func EnsureGolangCILint(version string, forceInstall bool) error {
 	found, err := pkg.IsCommandAvailable(golangciCmd, version)
 	if err != nil {
 		return errors.Wrap(
@@ -112,8 +76,7 @@ func RunGolangCILint(version string, forceInstall bool, args ...string) error {
 			)
 		}
 
-		_, err := semver.ParseTolerant(version)
-		if err != nil {
+		if _, err := semver.ParseTolerant(version); err != nil {
 			return errors.Wrapf(
 				err,
 				"%s was not SemVer-compliant. Cannot continue.",
@@ -152,6 +115,49 @@ func RunGolangCILint(version string, forceInstall bool, args ...string) error {
 		if err != nil {
 			return errors.Wrap(err, "installing golangci-lint")
 		}
+	}
+
+	return nil
+}
+
+// Ensure zeitgeist is installed and on the PATH.
+func EnsureZeitgeist(version string) error {
+	if version == "" {
+		log.Printf(
+			"A zeitgeist version to install was not specified. Using default version: %s",
+			defaultZeitgeistVersion,
+		)
+
+		version = defaultZeitgeistVersion
+	}
+
+	if _, err := semver.ParseTolerant(version); err != nil {
+		return errors.Wrapf(
+			err,
+			"%s was not SemVer-compliant. Cannot continue.",
+			version,
+		)
+	}
+
+	if err := pkg.EnsurePackage(zeitgeistModule, defaultZeitgeistVersion); err != nil {
+		return errors.Wrap(err, "ensuring package")
+	}
+
+	return nil
+}
+
+// RunGolangCILint runs all golang linters
+func RunGolangCILint(version string, forceInstall bool, args ...string) error {
+	if _, err := kpath.Exists(kpath.CheckSymlinkOnly, golangciConfig); err != nil {
+		return errors.Wrapf(
+			err,
+			"checking if golangci-lint config file (%s) exists",
+			golangciConfig,
+		)
+	}
+
+	if err := EnsureGolangCILint(version, forceInstall); err != nil {
+		return errors.Wrap(err, "ensuring golangci-lint is installed")
 	}
 
 	if err := shx.RunV(golangciCmd, "version"); err != nil {
