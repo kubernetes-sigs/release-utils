@@ -40,88 +40,7 @@ const (
 	golangciCmd                = "golangci-lint"
 	golangciConfig             = ".golangci.yml"
 	golangciURLBase            = "https://raw.githubusercontent.com/golangci/golangci-lint"
-
-	// repo-infra (used for boilerplate script)
-	defaultRepoInfraVersion = "v0.2.1"
-	repoInfraURLBase        = "https://raw.githubusercontent.com/kubernetes/repo-infra"
-
-	// zeitgeist
-	defaultZeitgeistVersion = "v0.2.0"
-	zeitgeistCmd            = "zeitgeist"
-	zeitgeistModule         = "sigs.k8s.io/zeitgeist"
 )
-
-// EnsureBoilerplateScript downloads copyright header boilerplate script, if
-// not already present in the repository.
-func EnsureBoilerplateScript(version, boilerplateScript string, forceInstall bool) error {
-	found, err := kpath.Exists(kpath.CheckSymlinkOnly, boilerplateScript)
-	if err != nil {
-		return errors.Wrapf(
-			err,
-			"checking if copyright header boilerplate script (%s) exists",
-			boilerplateScript,
-		)
-	}
-
-	if !found || forceInstall {
-		if version == "" {
-			log.Printf(
-				"A verify_boilerplate.py version to install was not specified. Using default version: %s",
-				defaultRepoInfraVersion,
-			)
-
-			version = defaultRepoInfraVersion
-		}
-
-		if !strings.HasPrefix(version, "v") {
-			return errors.New(
-				fmt.Sprintf(
-					"repo-infra version (%s) must begin with a 'v'",
-					version,
-				),
-			)
-		}
-
-		if _, err := semver.ParseTolerant(version); err != nil {
-			return errors.Wrapf(
-				err,
-				"%s was not SemVer-compliant. Cannot continue.",
-				version,
-			)
-		}
-
-		installURL, err := url.Parse(repoInfraURLBase)
-		if err != nil {
-			return errors.Wrap(err, "parsing URL")
-		}
-
-		installURL.Path = path.Join(
-			installURL.Path,
-			version,
-			"hack",
-			"verify_boilerplate.py",
-		)
-
-		installCmd := command.New(
-			"curl",
-			"-sSfL",
-			installURL.String(),
-			"-o",
-			boilerplateScript,
-		)
-
-		err = installCmd.RunSuccess()
-		if err != nil {
-			return errors.Wrap(err, "installing verify_boilerplate.py")
-		}
-	}
-
-	if err := os.Chmod(boilerplateScript, 0755); err != nil {
-		return errors.Wrap(err, "making script executable")
-	}
-
-	return nil
-}
 
 // Ensure golangci-lint is installed and on the PATH.
 func EnsureGolangCILint(version string, forceInstall bool) error {
@@ -196,32 +115,6 @@ func EnsureGolangCILint(version string, forceInstall bool) error {
 	return nil
 }
 
-// Ensure zeitgeist is installed and on the PATH.
-func EnsureZeitgeist(version string) error {
-	if version == "" {
-		log.Printf(
-			"A zeitgeist version to install was not specified. Using default version: %s",
-			defaultZeitgeistVersion,
-		)
-
-		version = defaultZeitgeistVersion
-	}
-
-	if _, err := semver.ParseTolerant(version); err != nil {
-		return errors.Wrapf(
-			err,
-			"%s was not SemVer-compliant. Cannot continue.",
-			version,
-		)
-	}
-
-	if err := pkg.EnsurePackage(zeitgeistModule, defaultZeitgeistVersion); err != nil {
-		return errors.Wrap(err, "ensuring package")
-	}
-
-	return nil
-}
-
 // RunGolangCILint runs all golang linters
 func RunGolangCILint(version string, forceInstall bool, args ...string) error {
 	if _, err := kpath.Exists(kpath.CheckSymlinkOnly, golangciConfig); err != nil {
@@ -284,59 +177,6 @@ func TestGo(verbose bool, pkgs ...string) error {
 	return nil
 }
 
-// VerifyBoilerplate runs copyright header checks
-func VerifyBoilerplate(version, binDir, boilerplateDir string, forceInstall bool) error {
-	if _, err := kpath.Exists(kpath.CheckSymlinkOnly, boilerplateDir); err != nil {
-		return errors.Wrapf(
-			err,
-			"checking if copyright header boilerplate directory (%s) exists",
-			boilerplateDir,
-		)
-	}
-
-	boilerplateScript := filepath.Join(binDir, "verify_boilerplate.py")
-
-	if err := EnsureBoilerplateScript(version, boilerplateScript, forceInstall); err != nil {
-		return errors.Wrap(err, "ensuring copyright header script is installed")
-	}
-
-	if err := shx.RunV(
-		boilerplateScript,
-		"--boilerplate-dir",
-		boilerplateDir,
-	); err != nil {
-		return errors.Wrap(err, "running copyright header checks")
-	}
-
-	return nil
-}
-
-// VerifyDeps runs zeitgeist to verify dependency versions
-func VerifyDeps(version, basePath, configPath string, localOnly bool) error {
-	if err := EnsureZeitgeist(version); err != nil {
-		return errors.Wrap(err, "ensuring zeitgeist is installed")
-	}
-
-	args := []string{"validate"}
-	if localOnly {
-		args = append(args, "--local")
-	}
-
-	if basePath != "" {
-		args = append(args, "--base-path", basePath)
-	}
-
-	if configPath != "" {
-		args = append(args, "--config", configPath)
-	}
-
-	if err := shx.RunV(zeitgeistCmd, args...); err != nil {
-		return errors.Wrap(err, "running zeitgeist")
-	}
-
-	return nil
-}
-
 // VerifyGoMod runs `go mod tidy` and `git diff --exit-code go.*` to ensure
 // all module updates have been checked in.
 func VerifyGoMod(scriptDir string) error {
@@ -367,30 +207,3 @@ func VerifyBuild(scriptDir string) error {
 
 	return nil
 }
-
-/*
-##@ Dependencies
-
-.SILENT: update-deps update-deps-go update-mocks
-.PHONY:  update-deps update-deps-go update-mocks
-
-update-deps: update-deps-go ## Update all dependencies for this repo
-	echo -e "${COLOR}Commit/PR the following changes:${NOCOLOR}"
-	git status --short
-
-update-deps-go: GO111MODULE=on
-update-deps-go: ## Update all golang dependencies for this repo
-	go get -u -t ./...
-	go mod tidy
-	go mod verify
-	$(MAKE) test-go-unit
-	./scripts/update-all.sh
-
-update-mocks: ## Update all generated mocks
-	go generate ./...
-	for f in $(shell find . -name fake_*.go); do \
-		cp scripts/boilerplate/boilerplate.generatego.txt tmp ;\
-		cat $$f >> tmp ;\
-		mv tmp $$f ;\
-	done
-*/
