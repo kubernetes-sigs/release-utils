@@ -39,6 +39,6 @@ func TestToFile(t *testing.T) {
 	content, err := ioutil.ReadFile(file.Name())
 	require.Nil(t, err)
 
-	require.Contains(t, string(content), "INFO")
+	require.Contains(t, string(content), "info")
 	require.Contains(t, string(content), "test")
 }

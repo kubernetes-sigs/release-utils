@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/carolynvs/magex v0.5.0
 	github.com/kr/text v0.2.0 // indirect
 	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
@@ -12,4 +13,5 @@ require (
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
+	k8s.io/utils v0.0.0-20210305010621-2afb4311ab10
 )

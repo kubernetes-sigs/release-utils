@@ -1,0 +1,21 @@
+dependencies:
+  # golangci/golangci-lint
+  - name: "golangci-lint"
+    version: 1.38.0
+    refPaths:
+    - path: mage/golang.go
+      match: defaultGolangCILintVersion\s+=\s+"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
+
+  # k8s.io/repo-infra
+  - name: "repo-infra"
+    version: 0.2.1
+    refPaths:
+    - path: mage/boilerplate.go
+      match: defaultRepoInfraVersion\s+=\s+"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?
+
+  # sigs.k8s.io/zeitgeist
+  - name: "zeitgeist"
+    version: 0.2.0
+    refPaths:
+    - path: mage/dependency.go
+      match: defaultZeitgeistVersion\s+=\s+"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
