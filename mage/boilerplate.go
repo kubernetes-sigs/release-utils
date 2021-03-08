@@ -78,6 +78,18 @@ func EnsureBoilerplateScript(version, boilerplateScript string, forceInstall boo
 			)
 		}
 
+		binDir := filepath.Dir(boilerplateScript)
+		if err := os.MkdirAll(binDir, 0755); err != nil {
+			return errors.Wrap(err, "creating binary directory")
+		}
+
+		file, err := os.Create(boilerplateScript)
+		if err != nil {
+			return errors.Wrap(err, "creating file")
+		}
+
+		defer file.Close()
+
 		installURL, err := url.Parse(repoInfraURLBase)
 		if err != nil {
 			return errors.Wrap(err, "parsing URL")
