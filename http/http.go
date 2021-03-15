@@ -18,7 +18,7 @@ package http
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -60,7 +60,7 @@ func GetURLResponseWithTimeOut(url string, timeout time.Duration) ([]byte, error
 		return nil, errors.New(errMsg)
 	}
 
-	respBytes, ioErr := ioutil.ReadAll(resp.Body)
+	respBytes, ioErr := io.ReadAll(resp.Body)
 	if ioErr != nil {
 		return nil, errors.Wrapf(ioErr, "could not handle the response body for %s", url)
 	}

@@ -18,7 +18,7 @@ package tar
 
 import (
 	"archive/tar"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -29,14 +29,14 @@ import (
 )
 
 func TestCompress(t *testing.T) {
-	baseTmpDir, err := ioutil.TempDir("", "compress-")
+	baseTmpDir, err := os.MkdirTemp("", "compress-")
 	require.Nil(t, err)
 	defer os.RemoveAll(baseTmpDir)
 
 	for _, fileName := range []string{
 		"1.txt", "2.bin", "3.md",
 	} {
-		require.Nil(t, ioutil.WriteFile(
+		require.Nil(t, os.WriteFile(
 			filepath.Join(baseTmpDir, fileName),
 			[]byte{1, 2, 3},
 			os.FileMode(0o644),
@@ -49,7 +49,7 @@ func TestCompress(t *testing.T) {
 	for _, fileName := range []string{
 		"4.txt", "5.bin", "6.md",
 	} {
-		require.Nil(t, ioutil.WriteFile(
+		require.Nil(t, os.WriteFile(
 			filepath.Join(subTmpDir, fileName),
 			[]byte{4, 5, 6},
 			os.FileMode(0o644),
@@ -104,13 +104,13 @@ func TestExtract(t *testing.T) {
 		0xeb, 0x16, 0x00, 0x00, 0xff, 0xff, 0xe9, 0xde, 0xbe, 0xdf, 0x00, 0x12,
 		0x00, 0x00,
 	}
-	file, err := ioutil.TempFile("", "tarball")
+	file, err := os.CreateTemp("", "tarball")
 	require.Nil(t, err)
 	defer os.Remove(file.Name())
 	_, err = file.Write(tarball)
 	require.Nil(t, err)
 
-	baseTmpDir, err := ioutil.TempDir("", "extract-")
+	baseTmpDir, err := os.MkdirTemp("", "extract-")
 	require.Nil(t, err)
 	require.Nil(t, os.RemoveAll(baseTmpDir))
 	defer os.RemoveAll(baseTmpDir)
@@ -138,7 +138,7 @@ func TestExtract(t *testing.T) {
 }
 
 func TestReadFileFromGzippedTar(t *testing.T) {
-	baseTmpDir, err := ioutil.TempDir("", "tar-read-file-")
+	baseTmpDir, err := os.MkdirTemp("", "tar-read-file-")
 	require.Nil(t, err)
 	defer os.RemoveAll(baseTmpDir)
 
@@ -148,7 +148,7 @@ func TestReadFileFromGzippedTar(t *testing.T) {
 	)
 	testTarPath := filepath.Join(baseTmpDir, "test.tar.gz")
 
-	require.Nil(t, ioutil.WriteFile(
+	require.Nil(t, os.WriteFile(
 		filepath.Join(baseTmpDir, testFilePath),
 		[]byte(testFileContents),
 		os.FileMode(0o644),
@@ -190,7 +190,7 @@ func TestReadFileFromGzippedTar(t *testing.T) {
 				require.Nil(t, r)
 				require.NotNil(t, err)
 			} else {
-				file, err := ioutil.ReadAll(r)
+				file, err := io.ReadAll(r)
 				require.Nil(t, err)
 				require.Equal(t, tc.want.fileContents, string(file))
 			}

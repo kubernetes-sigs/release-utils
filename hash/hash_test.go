@@ -20,7 +20,7 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"hash"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -35,7 +35,7 @@ func TestSHA512ForFile(t *testing.T) {
 	}{
 		{ // success
 			prepare: func() string {
-				f, err := ioutil.TempFile("", "")
+				f, err := os.CreateTemp("", "")
 				require.Nil(t, err)
 
 				_, err = f.WriteString("test")
@@ -74,7 +74,7 @@ func TestSHA256ForFile(t *testing.T) {
 	}{
 		{ // success
 			prepare: func() string {
-				f, err := ioutil.TempFile("", "")
+				f, err := os.CreateTemp("", "")
 				require.Nil(t, err)
 
 				_, err = f.WriteString("test")
@@ -111,7 +111,7 @@ func TestForFile(t *testing.T) {
 	}{
 		{ // success
 			prepare: func() (string, hash.Hash) {
-				f, err := ioutil.TempFile("", "")
+				f, err := os.CreateTemp("", "")
 				require.Nil(t, err)
 
 				_, err = f.WriteString("test")

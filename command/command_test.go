@@ -18,7 +18,6 @@ package command
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -209,20 +208,20 @@ func TestFailureRunSilentSuccessOutput(t *testing.T) {
 }
 
 func TestSuccessLogWriter(t *testing.T) {
-	f, err := ioutil.TempFile("", "log")
+	f, err := os.CreateTemp("", "log")
 	require.Nil(t, err)
 	defer func() { require.Nil(t, os.Remove(f.Name())) }()
 
 	res, err := New("echo", "Hello World").AddWriter(f).RunSuccessOutput()
 	require.Nil(t, err)
 
-	content, err := ioutil.ReadFile(f.Name())
+	content, err := os.ReadFile(f.Name())
 	require.Nil(t, err)
 	require.Equal(t, res.Output(), string(content))
 }
 
 func TestSuccessLogWriterMultiple(t *testing.T) {
-	f, err := ioutil.TempFile("", "log")
+	f, err := os.CreateTemp("", "log")
 	require.Nil(t, err)
 	defer func() { require.Nil(t, os.Remove(f.Name())) }()
 	b := &bytes.Buffer{}
@@ -233,27 +232,27 @@ func TestSuccessLogWriterMultiple(t *testing.T) {
 		RunSuccessOutput()
 	require.Nil(t, err)
 
-	content, err := ioutil.ReadFile(f.Name())
+	content, err := os.ReadFile(f.Name())
 	require.Nil(t, err)
 	require.Equal(t, res.Output(), string(content))
 	require.Equal(t, res.Output(), b.String())
 }
 
 func TestSuccessLogWriterSilent(t *testing.T) {
-	f, err := ioutil.TempFile("", "log")
+	f, err := os.CreateTemp("", "log")
 	require.Nil(t, err)
 	defer func() { require.Nil(t, os.Remove(f.Name())) }()
 
 	err = New("echo", "Hello World").AddWriter(f).RunSilentSuccess()
 	require.Nil(t, err)
 
-	content, err := ioutil.ReadFile(f.Name())
+	content, err := os.ReadFile(f.Name())
 	require.Nil(t, err)
 	require.Empty(t, content)
 }
 
 func TestSuccessLogWriterStdErr(t *testing.T) {
-	f, err := ioutil.TempFile("", "log")
+	f, err := os.CreateTemp("", "log")
 	require.Nil(t, err)
 	defer func() { require.Nil(t, os.Remove(f.Name())) }()
 
@@ -261,13 +260,13 @@ func TestSuccessLogWriterStdErr(t *testing.T) {
 		AddWriter(f).RunSuccessOutput()
 	require.Nil(t, err)
 
-	content, err := ioutil.ReadFile(f.Name())
+	content, err := os.ReadFile(f.Name())
 	require.Nil(t, err)
 	require.Equal(t, res.Error(), string(content))
 }
 
 func TestSuccessLogWriterStdErrAndStdOut(t *testing.T) {
-	f, err := ioutil.TempFile("", "log")
+	f, err := os.CreateTemp("", "log")
 	require.Nil(t, err)
 	defer func() { require.Nil(t, os.Remove(f.Name())) }()
 
@@ -275,14 +274,14 @@ func TestSuccessLogWriterStdErrAndStdOut(t *testing.T) {
 		AddWriter(f).RunSuccessOutput()
 	require.Nil(t, err)
 
-	content, err := ioutil.ReadFile(f.Name())
+	content, err := os.ReadFile(f.Name())
 	require.Nil(t, err)
 	require.Contains(t, string(content), res.Output())
 	require.Contains(t, string(content), res.Error())
 }
 
 func TestSuccessLogWriterStdErrAndStdOutOnlyStdErr(t *testing.T) {
-	f, err := ioutil.TempFile("", "log")
+	f, err := os.CreateTemp("", "log")
 	require.Nil(t, err)
 	defer func() { require.Nil(t, os.Remove(f.Name())) }()
 
@@ -290,13 +289,13 @@ func TestSuccessLogWriterStdErrAndStdOutOnlyStdErr(t *testing.T) {
 		AddErrorWriter(f).RunSuccessOutput()
 	require.Nil(t, err)
 
-	content, err := ioutil.ReadFile(f.Name())
+	content, err := os.ReadFile(f.Name())
 	require.Nil(t, err)
 	require.Equal(t, res.Error(), string(content))
 }
 
 func TestSuccessLogWriterStdErrAndStdOutOnlyStdOut(t *testing.T) {
-	f, err := ioutil.TempFile("", "log")
+	f, err := os.CreateTemp("", "log")
 	require.Nil(t, err)
 	defer func() { require.Nil(t, os.Remove(f.Name())) }()
 
@@ -304,7 +303,7 @@ func TestSuccessLogWriterStdErrAndStdOutOnlyStdOut(t *testing.T) {
 		AddOutputWriter(f).RunSuccessOutput()
 	require.Nil(t, err)
 
-	content, err := ioutil.ReadFile(f.Name())
+	content, err := os.ReadFile(f.Name())
 	require.Nil(t, err)
 	require.Equal(t, res.Output(), string(content))
 }

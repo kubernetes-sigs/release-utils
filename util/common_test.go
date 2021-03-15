@@ -18,7 +18,6 @@ package util
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -68,12 +67,12 @@ func TestPackagesAvailableFailure(t *testing.T) {
 }
 
 func TestMoreRecent(t *testing.T) {
-	baseTmpDir, err := ioutil.TempDir("", "")
+	baseTmpDir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
 
 	// Create test files.
 	testFileOne := filepath.Join(baseTmpDir, "testone.txt")
-	require.Nil(t, ioutil.WriteFile(
+	require.Nil(t, os.WriteFile(
 		testFileOne,
 		[]byte("file-one-contents"),
 		os.FileMode(0o644),
@@ -82,7 +81,7 @@ func TestMoreRecent(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	testFileTwo := filepath.Join(baseTmpDir, "testtwo.txt")
-	require.Nil(t, ioutil.WriteFile(
+	require.Nil(t, os.WriteFile(
 		testFileTwo,
 		[]byte("file-two-contents"),
 		os.FileMode(0o644),
@@ -166,14 +165,14 @@ func TestMoreRecent(t *testing.T) {
 }
 
 func TestCopyFile(t *testing.T) {
-	srcDir, err := ioutil.TempDir("", "src")
+	srcDir, err := os.MkdirTemp("", "src")
 	require.Nil(t, err)
-	dstDir, err := ioutil.TempDir("", "dst")
+	dstDir, err := os.MkdirTemp("", "dst")
 	require.Nil(t, err)
 
 	// Create test file.
 	srcFileOnePath := filepath.Join(srcDir, "testone.txt")
-	require.Nil(t, ioutil.WriteFile(
+	require.Nil(t, os.WriteFile(
 		srcFileOnePath,
 		[]byte("file-one-contents"),
 		os.FileMode(0o644),
@@ -238,21 +237,21 @@ func TestCopyFile(t *testing.T) {
 }
 
 func TestCopyDirContentLocal(t *testing.T) {
-	srcDir, err := ioutil.TempDir("", "src")
+	srcDir, err := os.MkdirTemp("", "src")
 	require.Nil(t, err)
-	dstDir, err := ioutil.TempDir("", "dst")
+	dstDir, err := os.MkdirTemp("", "dst")
 	require.Nil(t, err)
 
 	// Create test file.
 	srcFileOnePath := filepath.Join(srcDir, "testone.txt")
-	require.Nil(t, ioutil.WriteFile(
+	require.Nil(t, os.WriteFile(
 		srcFileOnePath,
 		[]byte("file-one-contents"),
 		os.FileMode(0o644),
 	))
 
 	srcFileTwoPath := filepath.Join(srcDir, "testtwo.txt")
-	require.Nil(t, ioutil.WriteFile(
+	require.Nil(t, os.WriteFile(
 		srcFileTwoPath,
 		[]byte("file-two-contents"),
 		os.FileMode(0o644),
@@ -301,19 +300,19 @@ func TestCopyDirContentLocal(t *testing.T) {
 }
 
 func TestRemoveAndReplaceDir(t *testing.T) {
-	dir, err := ioutil.TempDir("", "rm")
+	dir, err := os.MkdirTemp("", "rm")
 	require.Nil(t, err)
 
 	// Create test file.
 	fileOnePath := filepath.Join(dir, "testone.txt")
-	require.Nil(t, ioutil.WriteFile(
+	require.Nil(t, os.WriteFile(
 		fileOnePath,
 		[]byte("file-one-contents"),
 		os.FileMode(0o644),
 	))
 
 	fileTwoPath := filepath.Join(dir, "testtwo.txt")
-	require.Nil(t, ioutil.WriteFile(
+	require.Nil(t, os.WriteFile(
 		fileTwoPath,
 		[]byte("file-two-contents"),
 		os.FileMode(0o644),
@@ -358,12 +357,12 @@ func TestRemoveAndReplaceDir(t *testing.T) {
 }
 
 func TestExist(t *testing.T) {
-	dir, err := ioutil.TempDir("", "rm")
+	dir, err := os.MkdirTemp("", "rm")
 	require.Nil(t, err)
 
 	// Create test file.
 	fileOnePath := filepath.Join(dir, "testone.txt")
-	require.Nil(t, ioutil.WriteFile(
+	require.Nil(t, os.WriteFile(
 		fileOnePath,
 		[]byte("file-one-contents"),
 		os.FileMode(0o644),
@@ -551,17 +550,17 @@ func TestCleanLogFile(t *testing.T) {
 	// And expected output
 	cleanLog := line1 + line2 + sanitizedTokenLine + line3 + line4 + line5 + "\n"
 
-	logfile, err := ioutil.TempFile(os.TempDir(), "clean-log-test-")
+	logfile, err := os.CreateTemp("", "clean-log-test-")
 	require.Nil(t, err, "creating test logfile")
 	defer os.Remove(logfile.Name())
-	err = ioutil.WriteFile(logfile.Name(), []byte(originalLog), os.FileMode(0o644))
+	err = os.WriteFile(logfile.Name(), []byte(originalLog), os.FileMode(0o644))
 	require.Nil(t, err, "writing test file")
 
 	// Now, run the cleanLogFile
 	err = CleanLogFile(logfile.Name())
 	require.Nil(t, err, "running log cleaner")
 
-	resultingData, err := ioutil.ReadFile(logfile.Name())
+	resultingData, err := os.ReadFile(logfile.Name())
 	require.Nil(t, err, "reading modified file")
 	require.NotEmpty(t, resultingData)
 
