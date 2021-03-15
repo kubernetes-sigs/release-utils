@@ -19,7 +19,6 @@ package editor
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -139,7 +138,7 @@ func (e Editor) Launch(path string) error {
 // the contents of the file after launch, any errors that occur, and the path of the
 // temporary file so the caller can clean it up as needed.
 func (e Editor) LaunchTempFile(prefix, suffix string, r io.Reader) (bytes []byte, path string, err error) {
-	f, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s*%s", prefix, suffix))
+	f, err := os.CreateTemp("", fmt.Sprintf("%s*%s", prefix, suffix))
 	if err != nil {
 		return nil, "", err
 	}
@@ -154,7 +153,7 @@ func (e Editor) LaunchTempFile(prefix, suffix string, r io.Reader) (bytes []byte
 	if err := e.Launch(path); err != nil {
 		return nil, path, err
 	}
-	bytes, err = ioutil.ReadFile(path)
+	bytes, err = os.ReadFile(path)
 	return bytes, path, err
 }
 

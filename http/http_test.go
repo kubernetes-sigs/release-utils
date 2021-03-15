@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -93,7 +92,7 @@ func TestAgentPost(t *testing.T) {
 	resp := &http.Response{
 		Status:        "200 OK",
 		StatusCode:    200,
-		Body:          ioutil.NopCloser(bytes.NewReader([]byte("hello sig-release!"))),
+		Body:          io.NopCloser(bytes.NewReader([]byte("hello sig-release!"))),
 		ContentLength: 18,
 		Close:         true,
 		Request:       &http.Request{},
@@ -122,7 +121,7 @@ func TestAgentGet(t *testing.T) {
 	resp := &http.Response{
 		Status:        "200 OK",
 		StatusCode:    200,
-		Body:          ioutil.NopCloser(bytes.NewReader([]byte("hello sig-release!"))),
+		Body:          io.NopCloser(bytes.NewReader([]byte("hello sig-release!"))),
 		ContentLength: 18,
 		Close:         true,
 		Request:       &http.Request{},
@@ -151,7 +150,7 @@ func TestAgentOptions(t *testing.T) {
 	resp := &http.Response{
 		Status:        "Fake not found",
 		StatusCode:    404,
-		Body:          ioutil.NopCloser(bytes.NewReader([]byte("hello sig-release!"))),
+		Body:          io.NopCloser(bytes.NewReader([]byte("hello sig-release!"))),
 		ContentLength: 18,
 		Close:         true,
 		Request:       &http.Request{},

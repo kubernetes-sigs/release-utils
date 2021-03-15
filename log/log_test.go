@@ -17,7 +17,6 @@ limitations under the License.
 package log_test
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -28,7 +27,7 @@ import (
 )
 
 func TestToFile(t *testing.T) {
-	file, err := ioutil.TempFile("", "log-test-")
+	file, err := os.CreateTemp("", "log-test-")
 	require.Nil(t, err)
 	defer os.Remove(file.Name())
 
@@ -36,7 +35,7 @@ func TestToFile(t *testing.T) {
 	require.Nil(t, log.ToFile(file.Name()))
 	logrus.Info("test")
 
-	content, err := ioutil.ReadFile(file.Name())
+	content, err := os.ReadFile(file.Name())
 	require.Nil(t, err)
 
 	require.Contains(t, string(content), "info")
