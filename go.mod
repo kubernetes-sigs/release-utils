@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/carolynvs/magex v0.5.0
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.3.0
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
