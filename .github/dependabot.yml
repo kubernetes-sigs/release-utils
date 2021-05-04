@@ -4,6 +4,7 @@ updates:
   directory: "/"
   schedule:
     interval: daily
-  labels:
+  labels:  
+    - "area/dependency"
     - "release-note-none"
   open-pull-requests-limit: 10
