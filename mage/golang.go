@@ -27,6 +27,7 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/carolynvs/magex/pkg"
+	"github.com/carolynvs/magex/pkg/gopath"
 	"github.com/carolynvs/magex/shx"
 	"github.com/pkg/errors"
 
@@ -86,12 +87,12 @@ func EnsureGolangCILint(version string, forceInstall bool) error {
 
 		installURL.Path = path.Join(installURL.Path, version, "install.sh")
 
-		err = pkg.EnsureGopathBin()
+		err = gopath.EnsureGopathBin()
 		if err != nil {
 			return errors.Wrap(err, "ensuring $GOPATH/bin")
 		}
 
-		gopathBin := pkg.GetGopathBin()
+		gopathBin := gopath.GetGopathBin()
 
 		installCmd := command.New(
 			"curl",
