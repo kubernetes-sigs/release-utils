@@ -103,6 +103,43 @@ func TestSHA256ForFile(t *testing.T) {
 	}
 }
 
+func TestSHA1ForFile(t *testing.T) {
+	for _, tc := range []struct {
+		prepare     func() string
+		expected    string
+		shouldError bool
+	}{
+		{ // success
+			prepare: func() string {
+				f, err := os.CreateTemp("", "")
+				require.Nil(t, err)
+
+				_, err = f.WriteString("test")
+				require.Nil(t, err)
+
+				return f.Name()
+			},
+			expected:    "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+			shouldError: false,
+		},
+		{ // error open file
+			prepare:     func() string { return "" },
+			shouldError: true,
+		},
+	} {
+		filename := tc.prepare()
+
+		res, err := kHash.SHA1ForFile(filename)
+
+		if tc.shouldError {
+			require.NotNil(t, err)
+		} else {
+			require.Nil(t, err)
+			require.Equal(t, tc.expected, res)
+		}
+	}
+}
+
 func TestForFile(t *testing.T) {
 	for _, tc := range []struct {
 		prepare     func() (string, hash.Hash)
