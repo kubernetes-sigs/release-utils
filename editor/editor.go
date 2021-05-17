@@ -101,7 +101,7 @@ func (e Editor) args(path string) []string {
 		last := args[len(args)-1]
 		args[len(args)-1] = fmt.Sprintf("%s %q", last, path)
 	} else {
-		args = append(args, path)
+		args = append(args, path) // nolint: makezero
 	}
 	return args
 }
