@@ -335,3 +335,23 @@ func TestEnv(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, "123\nbar\ntest", res.OutputTrimNL())
 }
+
+func TestFilterStdout(t *testing.T) {
+	cmd, err := New("echo", "-n", "1 2 2 3").Filter("[25]", "0")
+	require.Nil(t, err)
+
+	res, err := cmd.Add("echo", "-n", "4 5 6 2 2").Run()
+	require.Nil(t, err)
+	require.True(t, res.Success())
+	require.Zero(t, res.ExitCode())
+	require.Equal(t, "\n1 0 0 3\n4 0 6 0 0", res.Output())
+}
+
+func TestFilterStderr(t *testing.T) {
+	res, err := New("bash", "-c", ">&2 echo -n my secret").Filter("secret", "***")
+	require.Nil(t, err)
+	out, err := res.RunSilentSuccessOutput()
+	require.Nil(t, err)
+	require.Equal(t, "my ***", out.Error())
+	require.Empty(t, out.Output())
+}
