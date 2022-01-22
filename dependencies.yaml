@@ -1,7 +1,7 @@
 dependencies:
   # golangci/golangci-lint
   - name: "golangci-lint"
-    version: 1.40.1
+    version: 1.43.0
     refPaths:
     - path: mage/golang.go
       match: defaultGolangCILintVersion\s+=\s+"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
@@ -15,7 +15,7 @@ dependencies:
 
   # sigs.k8s.io/zeitgeist
   - name: "zeitgeist"
-    version: 0.2.0
+    version: 0.3.0
     refPaths:
     - path: mage/dependency.go
       match: defaultZeitgeistVersion\s+=\s+"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
