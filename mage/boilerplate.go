@@ -79,7 +79,7 @@ func EnsureBoilerplateScript(version, boilerplateScript string, forceInstall boo
 		}
 
 		binDir := filepath.Dir(boilerplateScript)
-		if err := os.MkdirAll(binDir, 0755); err != nil {
+		if err := os.MkdirAll(binDir, 0o755); err != nil {
 			return errors.Wrap(err, "creating binary directory")
 		}
 
@@ -116,7 +116,7 @@ func EnsureBoilerplateScript(version, boilerplateScript string, forceInstall boo
 		}
 	}
 
-	if err := os.Chmod(boilerplateScript, 0755); err != nil {
+	if err := os.Chmod(boilerplateScript, 0o755); err != nil {
 		return errors.Wrap(err, "making script executable")
 	}
 

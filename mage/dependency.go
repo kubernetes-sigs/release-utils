@@ -27,7 +27,7 @@ import (
 
 const (
 	// zeitgeist
-	defaultZeitgeistVersion = "v0.2.0"
+	defaultZeitgeistVersion = "v0.3.0"
 	zeitgeistCmd            = "zeitgeist"
 	zeitgeistModule         = "sigs.k8s.io/zeitgeist"
 )
@@ -51,7 +51,7 @@ func EnsureZeitgeist(version string) error {
 		)
 	}
 
-	if err := pkg.EnsurePackage(zeitgeistModule, defaultZeitgeistVersion); err != nil {
+	if err := pkg.EnsurePackage(zeitgeistModule, version); err != nil {
 		return errors.Wrap(err, "ensuring package")
 	}
 
