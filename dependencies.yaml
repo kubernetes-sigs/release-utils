@@ -8,7 +8,7 @@ dependencies:
 
   # k8s.io/repo-infra
   - name: "repo-infra"
-    version: 0.2.1
+    version: 0.2.4
     refPaths:
     - path: mage/boilerplate.go
       match: defaultRepoInfraVersion\s+=\s+"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?
