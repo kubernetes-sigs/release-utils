@@ -2,8 +2,10 @@
 
 approvers:
   - sig-release-leads
+  - release-engineering-approvers
 reviewers:
-  - sig-release-leads
+  - release-engineering-approvers
+  - release-engineering-reviewers
 labels:
   - sig/release
   - area/release-eng
