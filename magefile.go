@@ -1,3 +1,4 @@
+//go:build mage
 // +build mage
 
 /*
@@ -68,7 +69,7 @@ func Verify() error {
 	}
 
 	fmt.Println("Running copyright header checks...")
-	if err := mage.VerifyBoilerplate("", binDir, boilerplateDir, false); err != nil {
+	if err := mage.VerifyBoilerplate("", binDir, boilerplateDir, true); err != nil {
 		return err
 	}
 

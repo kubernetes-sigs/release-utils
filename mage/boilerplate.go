@@ -35,7 +35,7 @@ import (
 
 const (
 	// repo-infra (used for boilerplate script)
-	defaultRepoInfraVersion = "v0.2.4"
+	defaultRepoInfraVersion = "v0.2.5"
 	repoInfraURLBase        = "https://raw.githubusercontent.com/kubernetes/repo-infra"
 )
 

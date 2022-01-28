@@ -33,6 +33,7 @@ const (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+//go:generate /usr/bin/env bash -c "cat ../scripts/boilerplate/boilerplate.generatego.txt httpfakes/fake_agent_implementation.go > httpfakes/_fake_agent_implementation.go && mv httpfakes/_fake_agent_implementation.go httpfakes/fake_agent_implementation.go"
 
 // Agent is an http agent
 type Agent struct {
