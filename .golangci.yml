@@ -166,3 +166,9 @@ linters-settings:
       - typeUnparen
       - unnamedResult
       - unnecessaryBlock
+  goheader:
+    template-path: "scripts/boilerplate/boilerplate.goheader.txt"
+    values:
+      regexp:
+        year: "[2][0-9][0-9][0-9]"
+        copyright-holder: Copyright {{year}} The Kubernetes Authors.
