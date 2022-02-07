@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"text/tabwriter"
 
@@ -60,7 +61,7 @@ type Info struct {
 
 // GetVersionInfo represents known information on how this binary was built.
 func GetVersionInfo() Info {
-	return Info{
+	info := Info{
 		ASCIIName:    asciiName,
 		GitVersion:   gitVersion,
 		GitCommit:    gitCommit,
@@ -70,6 +71,19 @@ func GetVersionInfo() Info {
 		Compiler:     runtime.Compiler,
 		Platform:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 	}
+
+	// If there is debug info for the module, this binary was installed outside
+	// the normal build process and might not have the ld flags set.
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return info
+	}
+
+	// Version is set in artifacts built with -X sigs.k8s.io/release-utils/version.gitVersion=<version>
+	// Ensure version is also set when installed via go install <module>
+	info.GitVersion = bi.Main.Version
+
+	return info
 }
 
 // String returns the string representation of the version info
