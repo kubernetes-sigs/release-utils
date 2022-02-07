@@ -72,6 +72,11 @@ func GetVersionInfo() Info {
 		Platform:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 	}
 
+	// Look for the default version and replace it from runtime build info if possible.
+	if info.GitVersion != "devel" {
+		return info
+	}
+
 	// If there is debug info for the module, this binary was installed outside
 	// the normal build process and might not have the ld flags set.
 	bi, ok := debug.ReadBuildInfo()
