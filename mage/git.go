@@ -39,10 +39,7 @@ func CheckGitConfigExists() (bool, error) {
 	)
 
 	stream, err := userName.RunSuccessOutput()
-	if err != nil {
-		return false, errors.Wrapf(err, "getting git %s", gitConfigNameKey)
-	}
-	if stream.OutputTrimNL() == "" {
+	if err != nil || stream.OutputTrimNL() == "" {
 		return false, nil
 	}
 
@@ -55,10 +52,7 @@ func CheckGitConfigExists() (bool, error) {
 	)
 
 	stream, err = userEmail.RunSuccessOutput()
-	if err != nil {
-		return false, errors.Wrapf(err, "getting git %s", gitConfigEmailKey)
-	}
-	if stream.OutputTrimNL() == "" {
+	if err != nil || stream.OutputTrimNL() == "" {
 		return false, nil
 	}
 
