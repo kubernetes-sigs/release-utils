@@ -149,6 +149,14 @@ func RunGolangCILint(version string, forceInstall bool, args ...string) error {
 }
 
 func TestGo(verbose bool, pkgs ...string) error {
+	return testGo(verbose, "", pkgs...)
+}
+
+func TestGoWithTags(verbose bool, tags string, pkgs ...string) error {
+	return testGo(verbose, tags, pkgs...)
+}
+
+func testGo(verbose bool, tags string, pkgs ...string) error {
 	verboseFlag := ""
 	if verbose {
 		verboseFlag = "-v"
@@ -166,6 +174,9 @@ func TestGo(verbose bool, pkgs ...string) error {
 
 	cmdArgs := []string{"test"}
 	cmdArgs = append(cmdArgs, verboseFlag)
+	if tags != "" {
+		cmdArgs = append(cmdArgs, "-tags", tags)
+	}
 	cmdArgs = append(cmdArgs, pkgArgs...)
 
 	if err := shx.RunV(
