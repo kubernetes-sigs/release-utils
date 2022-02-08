@@ -29,7 +29,7 @@ const (
 	gitConfigEmailValue = "nobody@k8s.io"
 )
 
-func CheckGitConfigExists() (bool, error) {
+func CheckGitConfigExists() bool {
 	userName := command.New(
 		"git",
 		"config",
@@ -38,9 +38,11 @@ func CheckGitConfigExists() (bool, error) {
 		gitConfigNameKey,
 	)
 
-	stream, err := userName.RunSuccessOutput()
+	stream, err := userName.RunSilentSuccessOutput()
 	if err != nil || stream.OutputTrimNL() == "" {
-		return false, nil
+		// NB: We're intentionally ignoring the error here because 'git config'
+		// returns an error (result code -1) if the config doesn't exist.
+		return false
 	}
 
 	userEmail := command.New(
@@ -51,19 +53,18 @@ func CheckGitConfigExists() (bool, error) {
 		gitConfigEmailKey,
 	)
 
-	stream, err = userEmail.RunSuccessOutput()
+	stream, err = userEmail.RunSilentSuccessOutput()
 	if err != nil || stream.OutputTrimNL() == "" {
-		return false, nil
+		// NB: We're intentionally ignoring the error here because 'git config'
+		// returns an error (result code -1) if the config doesn't exist.
+		return false
 	}
 
-	return true, nil
+	return true
 }
 
 func EnsureGitConfig() error {
-	exists, err := CheckGitConfigExists()
-	if err != nil {
-		return errors.Wrap(err, "ensuring git config")
-	}
+	exists := CheckGitConfigExists()
 	if exists {
 		return nil
 	}
