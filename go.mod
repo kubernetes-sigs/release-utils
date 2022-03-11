@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/carolynvs/magex v0.6.0
+	github.com/carolynvs/magex v0.6.1
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
