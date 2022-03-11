@@ -32,18 +32,17 @@ remove leading whitespace from that line:
 -->
 
 <!--
-/kind api-change
 /kind bug
-/kind ci
 /kind cleanup
-/kind dependency-change
-/kind deprecation
-/kind design
 /kind documentation
-/kind failing-test
 /kind feature
+
+Optionally add one or more of the following kinds if applicable:
+/kind api-change
+/kind deprecation
+/kind failing-test
 /kind flake
-/kind other
+/kind regression
 -->
 
 #### What this PR does / why we need it:
