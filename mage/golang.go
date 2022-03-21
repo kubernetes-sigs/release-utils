@@ -29,7 +29,6 @@ import (
 	"github.com/carolynvs/magex/pkg"
 	"github.com/carolynvs/magex/pkg/gopath"
 	"github.com/carolynvs/magex/shx"
-	"github.com/pkg/errors"
 
 	kpath "k8s.io/utils/path"
 	"sigs.k8s.io/release-utils/command"
@@ -47,9 +46,9 @@ const (
 func EnsureGolangCILint(version string, forceInstall bool) error {
 	found, err := pkg.IsCommandAvailable(golangciCmd, version)
 	if err != nil {
-		return errors.Wrap(
-			err,
-			fmt.Sprintf("checking if %s is available", golangciCmd),
+		return fmt.Errorf(
+			"checking if %s is available: %w",
+			golangciCmd, err,
 		)
 	}
 
@@ -64,32 +63,29 @@ func EnsureGolangCILint(version string, forceInstall bool) error {
 		}
 
 		if !strings.HasPrefix(version, "v") {
-			return errors.New(
-				fmt.Sprintf(
-					"golangci-lint version (%s) must begin with a 'v'",
-					version,
-				),
+			return fmt.Errorf(
+				"golangci-lint version (%s) must begin with a 'v'",
+				version,
 			)
 		}
 
 		if _, err := semver.ParseTolerant(version); err != nil {
-			return errors.Wrapf(
-				err,
-				"%s was not SemVer-compliant. Cannot continue.",
-				version,
+			return fmt.Errorf(
+				"%s was not SemVer-compliant. Cannot continue.: %w",
+				version, err,
 			)
 		}
 
 		installURL, err := url.Parse(golangciURLBase)
 		if err != nil {
-			return errors.Wrap(err, "parsing URL")
+			return fmt.Errorf("parsing URL: %w", err)
 		}
 
 		installURL.Path = path.Join(installURL.Path, version, "install.sh")
 
 		err = gopath.EnsureGopathBin()
 		if err != nil {
-			return errors.Wrap(err, "ensuring $GOPATH/bin")
+			return fmt.Errorf("ensuring $GOPATH/bin: %w", err)
 		}
 
 		gopathBin := gopath.GetGopathBin()
@@ -109,7 +105,7 @@ func EnsureGolangCILint(version string, forceInstall bool) error {
 
 		err = installCmd.RunSuccess()
 		if err != nil {
-			return errors.Wrap(err, "installing golangci-lint")
+			return fmt.Errorf("installing golangci-lint: %w", err)
 		}
 	}
 
@@ -119,30 +115,29 @@ func EnsureGolangCILint(version string, forceInstall bool) error {
 // RunGolangCILint runs all golang linters
 func RunGolangCILint(version string, forceInstall bool, args ...string) error {
 	if _, err := kpath.Exists(kpath.CheckSymlinkOnly, golangciConfig); err != nil {
-		return errors.Wrapf(
-			err,
-			"checking if golangci-lint config file (%s) exists",
-			golangciConfig,
+		return fmt.Errorf(
+			"checking if golangci-lint config file (%s) exists: %w",
+			golangciConfig, err,
 		)
 	}
 
 	if err := EnsureGolangCILint(version, forceInstall); err != nil {
-		return errors.Wrap(err, "ensuring golangci-lint is installed")
+		return fmt.Errorf("ensuring golangci-lint is installed: %w", err)
 	}
 
 	if err := shx.RunV(golangciCmd, "version"); err != nil {
-		return errors.Wrap(err, "getting golangci-lint version")
+		return fmt.Errorf("getting golangci-lint version: %w", err)
 	}
 
 	if err := shx.RunV(golangciCmd, "linters"); err != nil {
-		return errors.Wrap(err, "listing golangci-lint linters")
+		return fmt.Errorf("listing golangci-lint linters: %w", err)
 	}
 
 	runArgs := []string{"run"}
 	runArgs = append(runArgs, args...)
 
 	if err := shx.RunV(golangciCmd, runArgs...); err != nil {
-		return errors.Wrap(err, "running golangci-lint linters")
+		return fmt.Errorf("running golangci-lint linters: %w", err)
 	}
 
 	return nil
@@ -183,7 +178,7 @@ func testGo(verbose bool, tags string, pkgs ...string) error {
 		"go",
 		cmdArgs...,
 	); err != nil {
-		return errors.Wrap(err, "running go test")
+		return fmt.Errorf("running go test: %w", err)
 	}
 
 	return nil
@@ -193,11 +188,11 @@ func testGo(verbose bool, tags string, pkgs ...string) error {
 // all module updates have been checked in.
 func VerifyGoMod(scriptDir string) error {
 	if err := shx.RunV("go", "mod", "tidy"); err != nil {
-		return errors.Wrap(err, "running go mod tidy")
+		return fmt.Errorf("running go mod tidy: %w", err)
 	}
 
 	if err := shx.RunV("git", "diff", "--exit-code", "go.*"); err != nil {
-		return errors.Wrap(err, "running go mod tidy")
+		return fmt.Errorf("running go mod tidy: %w", err)
 	}
 
 	return nil
@@ -207,14 +202,14 @@ func VerifyGoMod(scriptDir string) error {
 func VerifyBuild(scriptDir string) error {
 	wd, err := os.Getwd()
 	if err != nil {
-		return errors.Wrap(err, "getting working directory")
+		return fmt.Errorf("getting working directory: %w", err)
 	}
 
 	scriptDir = filepath.Join(wd, scriptDir)
 
 	buildScript := filepath.Join(scriptDir, "verify-build.sh")
 	if err := shx.RunV(buildScript); err != nil {
-		return errors.Wrap(err, "running go build")
+		return fmt.Errorf("running go build: %w", err)
 	}
 
 	return nil

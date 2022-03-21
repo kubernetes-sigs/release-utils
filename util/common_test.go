@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -24,7 +25,6 @@ import (
 	"time"
 
 	"github.com/blang/semver"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
