@@ -17,7 +17,8 @@ limitations under the License.
 package version
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +38,7 @@ func Version() *cobra.Command {
 			if outputJSON {
 				out, err := v.JSONString()
 				if err != nil {
-					return errors.Wrap(err, "unable to generate JSON from version info")
+					return fmt.Errorf("unable to generate JSON from version info: %w", err)
 				}
 				cmd.Println(out)
 			} else {

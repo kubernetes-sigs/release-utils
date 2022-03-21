@@ -17,7 +17,7 @@ limitations under the License.
 package mage
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
 
 	"sigs.k8s.io/release-utils/command"
 )
@@ -76,7 +76,7 @@ func EnsureGitConfig() error {
 		gitConfigNameKey,
 		gitConfigNameValue,
 	).RunSuccess(); err != nil {
-		return errors.Wrapf(err, "configuring git %s", gitConfigNameKey)
+		return fmt.Errorf("configuring git %s: %w", gitConfigNameKey, err)
 	}
 
 	if err := command.New(
@@ -86,7 +86,7 @@ func EnsureGitConfig() error {
 		gitConfigEmailKey,
 		gitConfigEmailValue,
 	).RunSuccess(); err != nil {
-		return errors.Wrapf(err, "configuring git %s", gitConfigEmailKey)
+		return fmt.Errorf("configuring git %s: %w", gitConfigEmailKey, err)
 	}
 
 	return nil

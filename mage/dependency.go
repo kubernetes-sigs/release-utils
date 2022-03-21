@@ -17,12 +17,12 @@ limitations under the License.
 package mage
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/blang/semver"
 	"github.com/carolynvs/magex/pkg"
 	"github.com/carolynvs/magex/shx"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -44,15 +44,14 @@ func EnsureZeitgeist(version string) error {
 	}
 
 	if _, err := semver.ParseTolerant(version); err != nil {
-		return errors.Wrapf(
-			err,
-			"%s was not SemVer-compliant. Cannot continue.",
-			version,
+		return fmt.Errorf(
+			"%s was not SemVer-compliant, cannot continue: %w",
+			version, err,
 		)
 	}
 
 	if err := pkg.EnsurePackage(zeitgeistModule, version); err != nil {
-		return errors.Wrap(err, "ensuring package")
+		return fmt.Errorf("ensuring package: %w", err)
 	}
 
 	return nil
@@ -61,7 +60,7 @@ func EnsureZeitgeist(version string) error {
 // VerifyDeps runs zeitgeist to verify dependency versions
 func VerifyDeps(version, basePath, configPath string, localOnly bool) error {
 	if err := EnsureZeitgeist(version); err != nil {
-		return errors.Wrap(err, "ensuring zeitgeist is installed")
+		return fmt.Errorf("ensuring zeitgeist is installed: %w", err)
 	}
 
 	args := []string{"validate"}
@@ -78,7 +77,7 @@ func VerifyDeps(version, basePath, configPath string, localOnly bool) error {
 	}
 
 	if err := shx.RunV(zeitgeistCmd, args...); err != nil {
-		return errors.Wrap(err, "running zeitgeist")
+		return fmt.Errorf("running zeitgeist: %w", err)
 	}
 
 	return nil

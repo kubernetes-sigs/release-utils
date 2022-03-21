@@ -27,7 +27,6 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/carolynvs/magex/shx"
-	"github.com/pkg/errors"
 
 	kpath "k8s.io/utils/path"
 	"sigs.k8s.io/release-utils/command"
@@ -44,10 +43,9 @@ const (
 func EnsureBoilerplateScript(version, boilerplateScript string, forceInstall bool) error {
 	found, err := kpath.Exists(kpath.CheckSymlinkOnly, boilerplateScript)
 	if err != nil {
-		return errors.Wrapf(
-			err,
-			"checking if copyright header boilerplate script (%s) exists",
-			boilerplateScript,
+		return fmt.Errorf(
+			"checking if copyright header boilerplate script (%s) exists: %w",
+			boilerplateScript, err,
 		)
 	}
 
@@ -62,37 +60,34 @@ func EnsureBoilerplateScript(version, boilerplateScript string, forceInstall boo
 		}
 
 		if !strings.HasPrefix(version, "v") {
-			return errors.New(
-				fmt.Sprintf(
-					"repo-infra version (%s) must begin with a 'v'",
-					version,
-				),
+			return fmt.Errorf(
+				"repo-infra version (%s) must begin with a 'v'",
+				version,
 			)
 		}
 
 		if _, err := semver.ParseTolerant(version); err != nil {
-			return errors.Wrapf(
-				err,
-				"%s was not SemVer-compliant. Cannot continue.",
-				version,
+			return fmt.Errorf(
+				"%s was not SemVer-compliant. Cannot continue.: %w",
+				version, err,
 			)
 		}
 
 		binDir := filepath.Dir(boilerplateScript)
 		if err := os.MkdirAll(binDir, 0o755); err != nil {
-			return errors.Wrap(err, "creating binary directory")
+			return fmt.Errorf("creating binary directory: %w", err)
 		}
 
 		file, err := os.Create(boilerplateScript)
 		if err != nil {
-			return errors.Wrap(err, "creating file")
+			return fmt.Errorf("creating file: %w", err)
 		}
 
 		defer file.Close()
 
 		installURL, err := url.Parse(repoInfraURLBase)
 		if err != nil {
-			return errors.Wrap(err, "parsing URL")
+			return fmt.Errorf("parsing URL: %w", err)
 		}
 
 		installURL.Path = path.Join(
@@ -112,12 +107,12 @@ func EnsureBoilerplateScript(version, boilerplateScript string, forceInstall boo
 
 		err = installCmd.RunSuccess()
 		if err != nil {
-			return errors.Wrap(err, "installing verify_boilerplate.py")
+			return fmt.Errorf("installing verify_boilerplate.py: %w", err)
 		}
 	}
 
 	if err := os.Chmod(boilerplateScript, 0o755); err != nil {
-		return errors.Wrap(err, "making script executable")
+		return fmt.Errorf("making script executable: %w", err)
 	}
 
 	return nil
@@ -126,17 +121,16 @@ func EnsureBoilerplateScript(version, boilerplateScript string, forceInstall boo
 // VerifyBoilerplate runs copyright header checks
 func VerifyBoilerplate(version, binDir, boilerplateDir string, forceInstall bool) error {
 	if _, err := kpath.Exists(kpath.CheckSymlinkOnly, boilerplateDir); err != nil {
-		return errors.Wrapf(
-			err,
-			"checking if copyright header boilerplate directory (%s) exists",
-			boilerplateDir,
+		return fmt.Errorf(
+			"checking if copyright header boilerplate directory (%s) exists: %w",
+			boilerplateDir, err,
 		)
 	}
 
 	boilerplateScript := filepath.Join(binDir, "verify_boilerplate.py")
 
 	if err := EnsureBoilerplateScript(version, boilerplateScript, forceInstall); err != nil {
-		return errors.Wrap(err, "ensuring copyright header script is installed")
+		return fmt.Errorf("ensuring copyright header script is installed: %w", err)
 	}
 
 	if err := shx.RunV(
@@ -144,7 +138,7 @@ func VerifyBoilerplate(version, binDir, boilerplateDir string, forceInstall bool
 		"--boilerplate-dir",
 		boilerplateDir,
 	); err != nil {
-		return errors.Wrap(err, "running copyright header checks")
+		return fmt.Errorf("running copyright header checks: %w", err)
 	}
 
 	return nil
