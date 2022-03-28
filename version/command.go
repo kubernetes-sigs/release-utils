@@ -26,7 +26,7 @@ import (
 // ```go
 //	rootCmd.AddCommand(version.Version())
 // ```
-func Version() *cobra.Command {
+func Version(fontName string) *cobra.Command {
 	var outputJSON bool
 	cmd := &cobra.Command{
 		Use:   "version",
@@ -35,6 +35,12 @@ func Version() *cobra.Command {
 			v := GetVersionInfo()
 			v.Name = cmd.Root().Name()
 			v.Description = cmd.Root().Short
+
+			v.FontName = ""
+			if validFont := v.CheckFontName(fontName); validFont {
+				v.FontName = fontName
+			}
+
 			if outputJSON {
 				out, err := v.JSONString()
 				if err != nil {
