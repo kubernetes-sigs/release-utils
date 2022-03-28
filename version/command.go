@@ -26,7 +26,19 @@ import (
 // ```go
 //	rootCmd.AddCommand(version.Version())
 // ```
-func Version(fontName string) *cobra.Command {
+func Version() *cobra.Command {
+	return version("")
+}
+
+// WithFont returns a cobra command to be added to another cobra command with a select font for ASCII, like:
+// ```go
+//	rootCmd.AddCommand(version.WithFont("starwars"))
+// ```
+func WithFont(fontName string) *cobra.Command {
+	return version(fontName)
+}
+
+func version(fontName string) *cobra.Command {
 	var outputJSON bool
 	cmd := &cobra.Command{
 		Use:   "version",
@@ -37,7 +49,7 @@ func Version(fontName string) *cobra.Command {
 			v.Description = cmd.Root().Short
 
 			v.FontName = ""
-			if validFont := v.CheckFontName(fontName); validFont {
+			if fontName != "" && v.CheckFontName(fontName) {
 				v.FontName = fontName
 			}
 
