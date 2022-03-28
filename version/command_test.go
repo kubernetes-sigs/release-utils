@@ -23,7 +23,7 @@ import (
 )
 
 func TestVersion(t *testing.T) {
-	v := version.Version()
+	v := version.Version("fender")
 	err := v.Execute()
 	if err != nil {
 		t.Errorf("%v", err)
@@ -31,7 +31,7 @@ func TestVersion(t *testing.T) {
 }
 
 func TestVersionJson(t *testing.T) {
-	v := version.Version()
+	v := version.Version("")
 	v.SetArgs([]string{"--json"})
 	err := v.Execute()
 	if err != nil {
