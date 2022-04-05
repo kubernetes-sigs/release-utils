@@ -32,6 +32,7 @@ import (
 
 	kpath "k8s.io/utils/path"
 	"sigs.k8s.io/release-utils/command"
+	"sigs.k8s.io/release-utils/env"
 )
 
 const (
@@ -40,6 +41,7 @@ const (
 	golangciCmd                = "golangci-lint"
 	golangciConfig             = ".golangci.yml"
 	golangciURLBase            = "https://raw.githubusercontent.com/golangci/golangci-lint"
+	defaultMinGoVersion        = "1.17"
 )
 
 // Ensure golangci-lint is installed and on the PATH.
@@ -187,7 +189,10 @@ func testGo(verbose bool, tags string, pkgs ...string) error {
 // VerifyGoMod runs `go mod tidy` and `git diff --exit-code go.*` to ensure
 // all module updates have been checked in.
 func VerifyGoMod(scriptDir string) error {
-	if err := shx.RunV("go", "mod", "tidy"); err != nil {
+	minGoVersion := env.Default("MIN_GO_VERSION", defaultMinGoVersion)
+	if err := shx.RunV(
+		"go", "mod", "tidy", fmt.Sprintf("-compat=%s", minGoVersion),
+	); err != nil {
 		return fmt.Errorf("running go mod tidy: %w", err)
 	}
 
