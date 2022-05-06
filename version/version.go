@@ -24,6 +24,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/common-nighthawk/go-figure"
 )
@@ -61,9 +62,68 @@ type Info struct {
 	Description string `json:"-"`
 }
 
+func init() {
+	buildInfo := getBuildInfo()
+	gitVersion = getGitVersion(buildInfo)
+	gitCommit = getCommit(buildInfo)
+	gitTreeState = getDirty(buildInfo)
+	buildDate = getBuildDate(buildInfo)
+}
+
+func getBuildInfo() *debug.BuildInfo {
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return nil
+	}
+	return bi
+}
+
+func getGitVersion(bi *debug.BuildInfo) string {
+	if bi == nil {
+		return "unknown"
+	}
+	return bi.Main.Version
+}
+
+func getCommit(bi *debug.BuildInfo) string {
+	return getKey(bi, "vcs.revision")
+}
+
+func getDirty(bi *debug.BuildInfo) string {
+	modified := getKey(bi, "vcs.modified")
+	if modified == "true" {
+		return "dirty"
+	}
+	if modified == "false" {
+		return "clean"
+	}
+	return "unknown"
+}
+
+func getBuildDate(bi *debug.BuildInfo) string {
+	buildTime := getKey(bi, "vcs.time")
+	t, err := time.Parse("2006-02-03T16:05:06Z", buildTime)
+	if err != nil {
+		return "unknown"
+	}
+	return t.Format("2006-02-03T16:05:06")
+}
+
+func getKey(bi *debug.BuildInfo, key string) string {
+	if bi == nil {
+		return "unknown"
+	}
+	for _, iter := range bi.Settings {
+		if iter.Key == key {
+			return iter.Value
+		}
+	}
+	return "unknown"
+}
+
 // GetVersionInfo represents known information on how this binary was built.
 func GetVersionInfo() Info {
-	info := Info{
+	return Info{
 		ASCIIName:    asciiName,
 		GitVersion:   gitVersion,
 		GitCommit:    gitCommit,
@@ -73,24 +133,6 @@ func GetVersionInfo() Info {
 		Compiler:     runtime.Compiler,
 		Platform:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 	}
-
-	// Look for the default version and replace it from runtime build info if possible.
-	if info.GitVersion != "devel" {
-		return info
-	}
-
-	// If there is debug info for the module, this binary was installed outside
-	// the normal build process and might not have the ld flags set.
-	bi, ok := debug.ReadBuildInfo()
-	if !ok {
-		return info
-	}
-
-	// Version is set in artifacts built with -X sigs.k8s.io/release-utils/version.gitVersion=<version>
-	// Ensure version is also set when installed via go install <module>
-	info.GitVersion = bi.Main.Version
-
-	return info
 }
 
 // String returns the string representation of the version info
