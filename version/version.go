@@ -104,11 +104,11 @@ func getDirty(bi *debug.BuildInfo) string {
 
 func getBuildDate(bi *debug.BuildInfo) string {
 	buildTime := getKey(bi, "vcs.time")
-	t, err := time.Parse("2006-02-03T16:05:06Z", buildTime)
+	t, err := time.Parse("2006-01-02T15:04:05Z", buildTime)
 	if err != nil {
 		return unknown
 	}
-	return t.Format("2006-02-03T16:05:06")
+	return t.Format("2006-01-02T15:04:05")
 }
 
 func getKey(bi *debug.BuildInfo, key string) string {
