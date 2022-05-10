@@ -29,6 +29,8 @@ import (
 	"github.com/common-nighthawk/go-figure"
 )
 
+const unknown = "unknown"
+
 // Base version information.
 //
 // This is the fallback data used when version information from git is not
@@ -38,11 +40,11 @@ var (
 	// branch should be tagged using the correct versioning strategy.
 	gitVersion = "devel"
 	// SHA1 from git, output of $(git rev-parse HEAD)
-	gitCommit = "unknown"
+	gitCommit = unknown
 	// State of git tree, either "clean" or "dirty"
-	gitTreeState = "unknown"
+	gitTreeState = unknown
 	// Build date in ISO8601 format, output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')
-	buildDate = "unknown"
+	buildDate = unknown
 	// flag to print the ascii name banner
 	asciiName = "true"
 )
@@ -80,7 +82,7 @@ func getBuildInfo() *debug.BuildInfo {
 
 func getGitVersion(bi *debug.BuildInfo) string {
 	if bi == nil {
-		return "unknown"
+		return unknown
 	}
 	return bi.Main.Version
 }
@@ -97,28 +99,28 @@ func getDirty(bi *debug.BuildInfo) string {
 	if modified == "false" {
 		return "clean"
 	}
-	return "unknown"
+	return unknown
 }
 
 func getBuildDate(bi *debug.BuildInfo) string {
 	buildTime := getKey(bi, "vcs.time")
 	t, err := time.Parse("2006-02-03T16:05:06Z", buildTime)
 	if err != nil {
-		return "unknown"
+		return unknown
 	}
 	return t.Format("2006-02-03T16:05:06")
 }
 
 func getKey(bi *debug.BuildInfo, key string) string {
 	if bi == nil {
-		return "unknown"
+		return unknown
 	}
 	for _, iter := range bi.Settings {
 		if iter.Key == key {
 			return iter.Value
 		}
 	}
-	return "unknown"
+	return unknown
 }
 
 // GetVersionInfo represents known information on how this binary was built.
