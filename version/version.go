@@ -84,6 +84,12 @@ func getGitVersion(bi *debug.BuildInfo) string {
 	if bi == nil {
 		return unknown
 	}
+
+	// TODO: remove this when the issue https://github.com/golang/go/issues/29228 is fixed
+	if bi.Main.Version == "(devel)" || bi.Main.Version == "" {
+		return gitVersion
+	}
+
 	return bi.Main.Version
 }
 
