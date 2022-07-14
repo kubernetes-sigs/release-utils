@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/blang/semver"
+	"github.com/blang/semver/v4"
 	"github.com/carolynvs/magex/pkg"
 	"github.com/carolynvs/magex/shx"
 )
