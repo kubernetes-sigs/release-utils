@@ -47,12 +47,6 @@ var (
 	buildDate = unknown
 	// flag to print the ascii name banner
 	asciiName = "true"
-	// goVersion is the used golang version.
-	goVersion = unknown
-	// compiler is the used golang compiler.
-	compiler = unknown
-	// platform is the used os/arch identifier.
-	platform = unknown
 )
 
 type Info struct {
@@ -68,6 +62,14 @@ type Info struct {
 	FontName    string `json:"-"`
 	Name        string `json:"-"`
 	Description string `json:"-"`
+}
+
+func init() {
+	buildInfo := getBuildInfo()
+	gitVersion = getGitVersion(buildInfo)
+	gitCommit = getCommit(buildInfo)
+	gitTreeState = getDirty(buildInfo)
+	buildDate = getBuildDate(buildInfo)
 }
 
 func getBuildInfo() *debug.BuildInfo {
@@ -129,41 +131,15 @@ func getKey(bi *debug.BuildInfo, key string) string {
 
 // GetVersionInfo represents known information on how this binary was built.
 func GetVersionInfo() Info {
-	buildInfo := getBuildInfo()
-	gitVersion = getGitVersion(buildInfo)
-	if gitCommit == unknown {
-		gitCommit = getCommit(buildInfo)
-	}
-
-	if gitTreeState == unknown {
-		gitTreeState = getDirty(buildInfo)
-	}
-
-	if buildDate == unknown {
-		buildDate = getBuildDate(buildInfo)
-	}
-
-	if goVersion == unknown {
-		goVersion = runtime.Version()
-	}
-
-	if compiler == unknown {
-		compiler = runtime.Compiler
-	}
-
-	if platform == unknown {
-		platform = fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
-	}
-
 	return Info{
 		ASCIIName:    asciiName,
 		GitVersion:   gitVersion,
 		GitCommit:    gitCommit,
 		GitTreeState: gitTreeState,
 		BuildDate:    buildDate,
-		GoVersion:    goVersion,
-		Compiler:     compiler,
-		Platform:     platform,
+		GoVersion:    runtime.Version(),
+		Compiler:     runtime.Compiler,
+		Platform:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 	}
 }
 
