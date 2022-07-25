@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/blang/semver/v4 v4.0.0
-	github.com/carolynvs/magex v0.8.1
+	github.com/carolynvs/magex v0.9.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
@@ -16,6 +16,7 @@ require (
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
+	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
