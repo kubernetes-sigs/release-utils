@@ -46,7 +46,7 @@ const (
 
 // Ensure golangci-lint is installed and on the PATH.
 func EnsureGolangCILint(version string, forceInstall bool) error {
-	found, err := pkg.IsCommandAvailable(golangciCmd, version)
+	found, err := pkg.IsCommandAvailable(golangciCmd, "--version", version)
 	if err != nil {
 		return fmt.Errorf(
 			"checking if %s is available: %w",
