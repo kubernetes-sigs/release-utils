@@ -13,14 +13,20 @@ issues:
 linters:
   disable-all: true
   enable:
+    - asasalint
     - asciicheck
+    - bidichk
     - bodyclose
-    - deadcode
+    - containedctx
+    - contextcheck
+    - decorder
     - depguard
     - dogsled
     - dupl
     - durationcheck
     - errcheck
+    - errchkjson
+    - execinquery
     - goconst
     - gocritic
     - gocyclo
@@ -29,35 +35,43 @@ linters:
     - gofumpt
     - goheader
     - goimports
-    - golint
     - gomoddirectives
     - gomodguard
     - goprintffuncname
     - gosimple
     - govet
+    - grouper
     - importas
     - ineffassign
+    - interfacebloat
+    - ireturn
+    - logrlint
+    - maintidx
     - makezero
     - misspell
     - nakedret
+    - nilnil
+    - nosprintfhostport
     - prealloc
     - predeclared
     - promlinter
+    - reassign
     - rowserrcheck
     - sqlclosecheck
     - staticcheck
-    - structcheck
     - stylecheck
+    - tenv
     - typecheck
     - unconvert
     - unparam
     - unused
-    - varcheck
+    - usestdlibvars
     - whitespace
     # - cyclop
+    # - errname
     # - errorlint
     # - exhaustive
-    # - exhaustivestruct
+    # - exhaustruct
     # - exportloopref
     # - forbidigo
     # - forcetypeassert
@@ -70,20 +84,20 @@ linters:
     # - goerr113
     # - gomnd
     # - gosec
-    # - ifshort
     # - lll
     # - nestif
     # - nilerr
     # - nlreturn
     # - noctx
     # - nolintlint
+    # - nonamedreturns
     # - paralleltest
     # - revive
-    # - scopelint
     # - tagliatelle
     # - testpackage
     # - thelper
     # - tparallel
+    # - varnamelen
     # - wastedassign
     # - wrapcheck
     # - wsl
@@ -101,31 +115,57 @@ linters-settings:
       # Diagnostic
       - appendAssign
       - argOrder
+      - badCall
       - badCond
+      - badLock
+      - badRegexp
+      - badSorting
+      - builtinShadowDecl
       - caseOrder
       - codegenComment
       - commentedOutCode
+      - deferInLoop
       - deprecatedComment
       - dupArg
       - dupBranchBody
       - dupCase
       - dupSubExpr
+      - dynamicFmtString
+      - emptyDecl
+      - evalOrder
       - exitAfterDefer
+      - externalErrorReassign
+      - filepathJoin
       - flagDeref
       - flagName
+      - mapKey
       - nilValReturn
       - offBy1
+      - regexpPattern
+      - returnAfterHttpError
       - sloppyReassign
+      - sloppyTypeAssert
+      - sortSlice
+      - sprintfQuotedString
+      - sqlQuery
+      - syncMapLoadAndDelete
+      - truncateCmp
+      - unnecessaryDefer
       - weakCond
-      - octalLiteral
 
       # Performance
       - appendCombine
       - equalFold
       - hugeParam
       - indexAlloc
+      - preferDecodeRune
+      - preferFprint
+      - preferStringWriter
+      - preferWriteByte
       - rangeExprCopy
       - rangeValCopy
+      - sliceClear
+      - stringXbytes
 
       # Style
       - assignOp
@@ -134,19 +174,36 @@ linters-settings:
       - commentFormatting
       - commentedOutImport
       - defaultCaseOrder
+      - deferUnlambda
       - docStub
+      - dupImport
       - elseif
       - emptyFallthrough
       - emptyStringTest
+      - exposedSyncMutex
       - hexLiteral
+      - httpNoBody
       - ifElseChain
+      - ioutilDeprecated
       - methodExprCall
+      - newDeref
+      - octalLiteral
+      - preferFilepathJoin
+      - redundantSprint
       - regexpMust
+      - regexpSimplify
+      - ruleguard
       - singleCaseSwitch
       - sloppyLen
-      - stringXbytes
+      - stringConcatSimplify
+      - stringsCompare
       - switchTrue
+      - timeCmpSimplify
+      - timeExprSimplify
+      - todoCommentWithoutDetail
+      - tooManyResultsChecker
       - typeAssertChain
+      - typeDefFirst
       - typeSwitchVar
       - underef
       - unlabelStmt
@@ -155,6 +212,7 @@ linters-settings:
       - valSwap
       - wrapperFunc
       - yodaStyleExpr
+      # - whyNoLint
 
       # Opinionated
       - builtinShadow
@@ -166,9 +224,3 @@ linters-settings:
       - typeUnparen
       - unnamedResult
       - unnecessaryBlock
-  goheader:
-    template-path: "scripts/boilerplate/boilerplate.goheader.txt"
-    values:
-      regexp:
-        year: "[2][0-9][0-9][0-9]"
-        copyright-holder: Copyright {{year}} The Kubernetes Authors.

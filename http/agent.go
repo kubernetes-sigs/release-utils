@@ -41,6 +41,7 @@ type Agent struct {
 }
 
 // AgentImplementation is the actual implementation of the http calls
+//
 //counterfeiter:generate . AgentImplementation
 type AgentImplementation interface {
 	SendPostRequest(*http.Client, string, []byte, string) (*http.Response, error)

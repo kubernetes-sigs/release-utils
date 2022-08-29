@@ -227,7 +227,7 @@ func TestCopyFile(t *testing.T) {
 				require.Nil(t, copyErr)
 			}
 			if copyErr == nil {
-				_, err := os.Stat(filepath.Join(tc.args.dst))
+				_, err := os.Stat(tc.args.dst)
 				if err != nil && tc.args.required {
 					t.Fatal("file does not exist in destination")
 				}
@@ -283,7 +283,7 @@ func TestCopyDirContentLocal(t *testing.T) {
 		"CopyDirContentsSuccessDstNotExist": {
 			args: args{
 				src: srcDir,
-				dst: filepath.Join(dstDir, "path/not/exist"),
+				dst: filepath.Join(dstDir, "path-not-exist"),
 			},
 			want: want{
 				err: nil,
@@ -340,7 +340,7 @@ func TestRemoveAndReplaceDir(t *testing.T) {
 		},
 		"RemoveAndReplaceNotExist": {
 			args: args{
-				dir: filepath.Join(dir, "not/exit"),
+				dir: filepath.Join(dir, "not-exit"),
 			},
 			want: want{
 				err: nil,
@@ -398,7 +398,7 @@ func TestExist(t *testing.T) {
 		},
 		"DirNotExists": {
 			args: args{
-				dir: filepath.Join(dir, "path/not/exit"),
+				dir: filepath.Join(dir, "path-not-exit"),
 			},
 			want: want{
 				exist: false,
