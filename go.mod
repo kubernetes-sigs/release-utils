@@ -9,7 +9,7 @@ require (
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
 	github.com/sirupsen/logrus v1.9.0
-	github.com/spf13/cobra v1.6.0
+	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 )
