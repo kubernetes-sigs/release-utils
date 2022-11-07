@@ -24,7 +24,7 @@ import (
 
 // getVersion gets a description of the commit, e.g. v0.30.1 (latest) or v0.30.1-32-gfe72ff73 (canary)
 func getVersion() (string, error) {
-	version, err := shx.Output("git", "describe", "--tags", "--match=v*")
+	version, err := shx.Output("git", "describe", "--tags", "--always")
 	if err != nil {
 		return "", err
 	}
