@@ -68,7 +68,7 @@ func VerifyDeps(version, basePath, configPath string, localOnly bool) error {
 
 	args := []string{"validate"}
 	if localOnly {
-		args = append(args, "--local")
+		args = append(args, "--local-only")
 	}
 
 	if basePath != "" {
