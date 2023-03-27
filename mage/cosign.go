@@ -34,7 +34,7 @@ func EnsureCosign(version string) error {
 	}
 
 	log.Printf("Checking if `cosign` version %s is installed\n", version)
-	found, err := pkg.IsCommandAvailable("cosign", version, "version")
+	found, err := pkg.IsCommandAvailable("cosign", "version", version)
 	if err != nil {
 		return err
 	}
