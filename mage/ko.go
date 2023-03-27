@@ -25,7 +25,7 @@ import (
 	"github.com/carolynvs/magex/pkg/downloads"
 )
 
-const defaultKoVersion = "0.11.2"
+const defaultKoVersion = "0.13.0"
 
 // EnsureKO
 func EnsureKO(version string) error {
