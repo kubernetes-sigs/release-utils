@@ -25,7 +25,7 @@ import (
 	"github.com/carolynvs/magex/pkg/downloads"
 )
 
-const defaultCosignVersion = "v1.7.1"
+const defaultCosignVersion = "v2.0.0"
 
 // EnsureCosign makes sure that the specified cosign version is available
 func EnsureCosign(version string) error {
