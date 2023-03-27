@@ -53,6 +53,7 @@ func EnsureZeitgeist(version string) error {
 	if err := pkg.EnsurePackageWith(pkg.EnsurePackageOptions{
 		Name:           zeitgeistModule,
 		DefaultVersion: version,
+		VersionCommand: "version",
 	}); err != nil {
 		return fmt.Errorf("ensuring package: %w", err)
 	}

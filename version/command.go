@@ -56,6 +56,7 @@ func version(fontName string) *cobra.Command {
 			if fontName != "" && v.CheckFontName(fontName) {
 				v.FontName = fontName
 			}
+			cmd.SetOut(cmd.OutOrStdout())
 
 			if outputJSON {
 				out, err := v.JSONString()

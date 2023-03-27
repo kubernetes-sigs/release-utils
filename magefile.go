@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/carolynvs/magex/pkg"
-
 	"sigs.k8s.io/release-utils/mage"
 )
 
@@ -63,11 +61,6 @@ func Test() error {
 
 // Verify runs repository verification scripts
 func Verify() error {
-	fmt.Println("Ensuring mage is available...")
-	if err := pkg.EnsureMage(""); err != nil {
-		return err
-	}
-
 	fmt.Println("Running copyright header checks...")
 	if err := mage.VerifyBoilerplate("", binDir, boilerplateDir, true); err != nil {
 		return err
