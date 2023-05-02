@@ -19,7 +19,7 @@ package mage
 import (
 	"fmt"
 
-	"github.com/carolynvs/magex/shx"
+	"github.com/uwu-tools/magex/shx"
 )
 
 // getVersion gets a description of the commit, e.g. v0.30.1 (latest) or v0.30.1-32-gfe72ff73 (canary)
