@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/carolynvs/magex/pkg"
-	"github.com/carolynvs/magex/pkg/archive"
-	"github.com/carolynvs/magex/pkg/downloads"
+	"github.com/uwu-tools/magex/pkg"
+	"github.com/uwu-tools/magex/pkg/archive"
+	"github.com/uwu-tools/magex/pkg/downloads"
 )
 
 const defaultKoVersion = "0.13.0"

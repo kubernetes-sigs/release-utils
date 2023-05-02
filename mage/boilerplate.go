@@ -26,7 +26,7 @@ import (
 	"strings"
 
 	"github.com/blang/semver/v4"
-	"github.com/carolynvs/magex/shx"
+	"github.com/uwu-tools/magex/shx"
 
 	kpath "k8s.io/utils/path"
 	"sigs.k8s.io/release-utils/command"

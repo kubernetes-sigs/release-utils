@@ -26,9 +26,9 @@ import (
 	"strings"
 
 	"github.com/blang/semver/v4"
-	"github.com/carolynvs/magex/pkg"
-	"github.com/carolynvs/magex/pkg/gopath"
-	"github.com/carolynvs/magex/shx"
+	"github.com/uwu-tools/magex/pkg"
+	"github.com/uwu-tools/magex/pkg/gopath"
+	"github.com/uwu-tools/magex/shx"
 
 	kpath "k8s.io/utils/path"
 	"sigs.k8s.io/release-utils/command"

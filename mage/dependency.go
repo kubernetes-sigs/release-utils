@@ -21,8 +21,8 @@ import (
 	"log"
 
 	"github.com/blang/semver/v4"
-	"github.com/carolynvs/magex/pkg"
-	"github.com/carolynvs/magex/shx"
+	"github.com/uwu-tools/magex/pkg"
+	"github.com/uwu-tools/magex/shx"
 )
 
 const (

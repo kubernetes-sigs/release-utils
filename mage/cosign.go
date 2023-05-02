@@ -21,8 +21,8 @@ import (
 	"log"
 	"runtime"
 
-	"github.com/carolynvs/magex/pkg"
-	"github.com/carolynvs/magex/pkg/downloads"
+	"github.com/uwu-tools/magex/pkg"
+	"github.com/uwu-tools/magex/pkg/downloads"
 )
 
 const defaultCosignVersion = "v2.0.0"

@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/blang/semver/v4 v4.0.0
-	github.com/carolynvs/magex v0.9.0
+	github.com/uwu-tools/magex v0.9.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
