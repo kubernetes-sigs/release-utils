@@ -113,7 +113,7 @@ func (a *Agent) Client() *http.Client {
 	}
 }
 
-// Get resturns the body a a GET request
+// Get returns the body a a GET request
 func (a *Agent) Get(url string) (content []byte, err error) {
 	request, err := a.GetRequest(url)
 	if err != nil {
