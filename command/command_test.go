@@ -86,7 +86,7 @@ func TestSuccessSilent(t *testing.T) {
 	require.True(t, res.Success())
 }
 
-func TestSuccessSepareted(t *testing.T) {
+func TestSuccessSeparated(t *testing.T) {
 	res, err := New("echo", "hi").RunSilent()
 	require.Nil(t, err)
 	require.True(t, res.Success())
