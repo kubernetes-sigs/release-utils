@@ -82,6 +82,40 @@ func TestCompress(t *testing.T) {
 	)
 }
 
+func TestCompressWithoutPreservingPath(t *testing.T) {
+	baseTmpDir, err := os.MkdirTemp("", "compress-")
+	require.Nil(t, err)
+	defer os.RemoveAll(baseTmpDir)
+
+	compressDir := filepath.Join(baseTmpDir, "to_compress")
+	require.Nil(t, os.MkdirAll(compressDir, os.FileMode(0o755)))
+
+	for _, fileName := range []string{
+		"1.txt", "2.bin", "3.md",
+	} {
+		require.Nil(t, os.WriteFile(
+			filepath.Join(compressDir, fileName),
+			[]byte{1, 2, 3},
+			os.FileMode(0o644),
+		))
+	}
+
+	logrus.SetLevel(logrus.DebugLevel)
+
+	tarFilePath := filepath.Join(baseTmpDir, "res.tar.gz")
+	require.Nil(t, CompressWithoutPreservingPath(tarFilePath, compressDir))
+	require.FileExists(t, tarFilePath)
+
+	res := []string{"1.txt", "2.bin", "3.md"}
+	require.Nil(t, iterateTarball(
+		tarFilePath, func(_ *tar.Reader, header *tar.Header) (bool, error) {
+			require.Equal(t, res[0], header.Name)
+			res = res[1:]
+			return false, nil
+		}),
+	)
+}
+
 func TestExtract(t *testing.T) {
 	tarball := []byte{
 		0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xec, 0xd7,

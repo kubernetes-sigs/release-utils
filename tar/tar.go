@@ -30,8 +30,21 @@ import (
 )
 
 // Compress the provided  `tarContentsPath` into the `tarFilePath` while
-// excluding the `exclude` regular expression patterns.
+// excluding the `exclude` regular expression patterns. This function will
+// preserve path between `tarFilePath` and `tarContentsPath` directories inside
+// the archive (see `CompressWithoutPreservingPath` as an alternative).
 func Compress(tarFilePath, tarContentsPath string, excludes ...*regexp.Regexp) error {
+	return compress(true, tarFilePath, tarContentsPath, excludes...)
+}
+
+// Compress the provided  `tarContentsPath` into the `tarFilePath` while
+// excluding the `exclude` regular expression patterns. This function will
+// not preserve path leading to the `tarContentsPath` directory in the archive.
+func CompressWithoutPreservingPath(tarFilePath, tarContentsPath string, excludes ...*regexp.Regexp) error {
+	return compress(false, tarFilePath, tarContentsPath, excludes...)
+}
+
+func compress(preserveRootDirStructure bool, tarFilePath, tarContentsPath string, excludes ...*regexp.Regexp) error {
 	tarFile, err := os.Create(tarFilePath)
 	if err != nil {
 		return fmt.Errorf("create tar file %q: %w", tarFilePath, err)
@@ -77,8 +90,20 @@ func Compress(tarFilePath, tarContentsPath string, excludes ...*regexp.Regexp) e
 
 		// Make the path inside the tar relative to the archive path if
 		// necessary.
+		//
+		// The default way this works is that we preserve the path between
+		// `tarFilePath` and `tarContentsPath` directories inside the archive.
+		// This might not work well if `tarFilePath` and `tarContentsPath`
+		// are on different levels in the file system (e.g. they don't have
+		// common parent directory).
+		// In such case we can disable `preserveRootDirStructure` flag which
+		// will make paths inside the archive relative to `tarContentsPath`.
+		dropPath := filepath.Dir(tarFilePath)
+		if !preserveRootDirStructure {
+			dropPath = tarContentsPath
+		}
 		header.Name = strings.TrimLeft(
-			strings.TrimPrefix(filePath, filepath.Dir(tarFilePath)),
+			strings.TrimPrefix(filePath, dropPath),
 			string(filepath.Separator),
 		)
 		header.Linkname = filepath.ToSlash(header.Linkname)
