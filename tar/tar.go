@@ -143,7 +143,7 @@ func Extract(tarFilePath, destinationPath string) error {
 			case tar.TypeDir:
 				targetDir := filepath.Join(destinationPath, header.Name)
 				logrus.Tracef("Creating directory %s", targetDir)
-				if err := os.Mkdir(targetDir, os.FileMode(0o755)); err != nil {
+				if err := os.MkdirAll(targetDir, os.FileMode(0o755)); err != nil {
 					return false, fmt.Errorf("create target directory: %w", err)
 				}
 			case tar.TypeSymlink:
