@@ -25,7 +25,7 @@ import (
 	"github.com/uwu-tools/magex/pkg/downloads"
 )
 
-const defaultKoVersion = "0.13.0"
+const defaultKoVersion = "0.14.1"
 
 // EnsureKO
 func EnsureKO(version string) error {
@@ -58,7 +58,7 @@ func InstallKO(version string) error {
 
 	opts := archive.DownloadArchiveOptions{
 		DownloadOptions: downloads.DownloadOptions{
-			UrlTemplate: "https://github.com/google/ko/releases/download/v{{.VERSION}}/ko_{{.VERSION}}_{{.GOOS}}_{{.GOARCH}}{{.EXT}}",
+			UrlTemplate: "https://github.com/ko-build/ko/releases/download/v{{.VERSION}}/ko_{{.VERSION}}_{{.GOOS}}_{{.GOARCH}}{{.EXT}}",
 			Name:        "ko",
 			Version:     version,
 			OsReplacement: map[string]string{
