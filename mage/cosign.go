@@ -25,7 +25,7 @@ import (
 	"github.com/uwu-tools/magex/pkg/downloads"
 )
 
-const defaultCosignVersion = "v2.0.0"
+const defaultCosignVersion = "v2.1.1"
 
 // EnsureCosign makes sure that the specified cosign version is available
 func EnsureCosign(version string) error {
