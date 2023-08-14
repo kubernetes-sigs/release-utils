@@ -18,6 +18,8 @@ package mage
 
 import (
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/uwu-tools/magex/shx"
 )
@@ -58,12 +60,11 @@ func getBuildDateTime() (string, error) {
 		return "", err
 	}
 	if result != "" {
-		sourceDateEpoch := fmt.Sprintf("@%s", result)
-		date, err := shx.Output("date", "-u", "-d", sourceDateEpoch, "+%Y-%m-%dT%H:%M:%SZ")
+		parsedInt, err := strconv.ParseInt(result, 10, 64)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("parse source date epoch to int: %w", err)
 		}
-		return date, nil
+		return time.Unix(parsedInt, 0).UTC().Format(time.RFC3339), nil
 	}
 
 	return shx.Output("date", "+%Y-%m-%dT%H:%M:%SZ")
