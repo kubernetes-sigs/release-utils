@@ -1,7 +1,7 @@
 dependencies:
   # golangci/golangci-lint
   - name: "golangci-lint"
-    version: 1.53.3
+    version: 1.54.2
     refPaths:
       - path: mage/golang.go
         match: defaultGolangCILintVersion\s+=\s+"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
@@ -12,6 +12,13 @@ dependencies:
     refPaths:
       - path: mage/ko.go
         match: defaultKoVersion\s+=\s+"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
+
+  # cosign
+  - name: "cosign"
+    version: 2.2.0
+    refPaths:
+      - path: mage/cosign.go
+        match: defaultCosignVersion\s+=\s+"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
 
   # k8s.io/repo-infra
   - name: "repo-infra"
