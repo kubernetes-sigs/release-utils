@@ -1,14 +1,14 @@
 dependencies:
   # golangci/golangci-lint
   - name: "golangci-lint"
-    version: 1.54.2
+    version: 1.55.1
     refPaths:
-      - path: mage/golang.go
+      - path: mage/golangci-lint.go
         match: defaultGolangCILintVersion\s+=\s+"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
 
   # ko
   - name: "ko"
-    version: 0.14.1
+    version: 0.15.0
     refPaths:
       - path: mage/ko.go
         match: defaultKoVersion\s+=\s+"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
