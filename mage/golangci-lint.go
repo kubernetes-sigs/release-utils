@@ -188,7 +188,7 @@ func testGo(verbose bool, tags string, pkgs ...string) error {
 
 // VerifyGoMod runs `go mod tidy` and `git diff --exit-code go.*` to ensure
 // all module updates have been checked in.
-func VerifyGoMod(scriptDir string) error {
+func VerifyGoMod() error {
 	minGoVersion := env.Default("MIN_GO_VERSION", defaultMinGoVersion)
 	if err := shx.RunV(
 		"go", "mod", "tidy", fmt.Sprintf("-compat=%s", minGoVersion),
