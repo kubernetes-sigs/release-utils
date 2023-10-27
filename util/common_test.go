@@ -459,7 +459,7 @@ func TestTrimTagPrefix(t *testing.T) {
 }
 
 func TestWrapText(t *testing.T) {
-	//nolint
+	//nolint: misspell
 	longText := `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut molestie accumsan orci, id congue nibh sollicitudin in. Nulla condimentum arcu eu est hendrerit tempus. Nunc risus nibh, aliquam in ultrices fringilla, aliquet ac purus. Aenean non nibh magna. Nunc lacinia suscipit malesuada. Vivamus porta a leo vel ornare. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Morbi pellentesque orci magna, sed semper nulla fringilla at. Nam elementum ipsum maximus lectus tempor faucibus. Donec eu enim nulla. Integer egestas venenatis tristique. Curabitur id purus sem. Vivamus nec mollis lorem.`
 	wrappedText := "Lorem ipsum dolor sit amet, consectetur\n"
 	wrappedText += "adipiscing elit. Ut molestie accumsan\n"
@@ -471,7 +471,7 @@ func TestWrapText(t *testing.T) {
 	wrappedText += "suscipit malesuada. Vivamus porta a leo\n"
 	wrappedText += "vel ornare. Orci varius natoque\n"
 	wrappedText += "penatibus et magnis dis parturient\n"
-	wrappedText += "montes, nascetur ridiculus mus. Morbi\n" //nolint
+	wrappedText += "montes, nascetur ridiculus mus. Morbi\n" //nolint: misspell
 	wrappedText += "pellentesque orci magna, sed semper\n"
 	wrappedText += "nulla fringilla at. Nam elementum ipsum\n"
 	wrappedText += "maximus lectus tempor faucibus. Donec eu\n"
@@ -538,7 +538,7 @@ func TestCleanLogFile(t *testing.T) {
 	line5 := "\nControl Chars: "
 
 	// Create a token line
-	originalTokenLine := "7aa33bd2186c40849c4c2df321241e241def98ca:x-oauth-basic"
+	originalTokenLine := "7aa33bd2186c40849c4c2df321241e241def98ca:x-oauth-basic" //nolint: gosec
 	sanitizedTokenLine := string(StripSensitiveData([]byte(originalTokenLine)))
 	require.NotEqual(t, originalTokenLine, sanitizedTokenLine)
 
