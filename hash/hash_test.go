@@ -17,7 +17,7 @@ limitations under the License.
 package hash_test
 
 import (
-	"crypto/sha1"
+	"crypto/sha1" //nolint: gosec
 	"crypto/sha256"
 	"hash"
 	"os"
@@ -154,7 +154,7 @@ func TestForFile(t *testing.T) {
 				_, err = f.WriteString("test")
 				require.Nil(t, err)
 
-				return f.Name(), sha1.New()
+				return f.Name(), sha1.New() //nolint: gosec
 			},
 			expected:    "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
 			shouldError: false,

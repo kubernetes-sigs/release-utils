@@ -101,7 +101,7 @@ func (e Editor) args(path string) []string {
 		last := args[len(args)-1]
 		args[len(args)-1] = fmt.Sprintf("%s %q", last, path)
 	} else {
-		args = append(args, path) // nolint: makezero
+		args = append(args, path) //nolint: makezero
 	}
 	return args
 }
@@ -117,7 +117,8 @@ func (e Editor) Launch(path string) error {
 		return err
 	}
 	args := e.args(abs)
-	cmd := exec.Command(args[0], args[1:]...)
+	// TODO: check to validate the args and maybe sabitize those
+	cmd := exec.Command(args[0], args[1:]...) //nolint: gosec
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
