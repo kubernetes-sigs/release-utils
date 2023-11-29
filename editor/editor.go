@@ -129,7 +129,7 @@ func (e Editor) Launch(path string) error {
 				return fmt.Errorf("unable to launch the editor %q", strings.Join(e.Args, " "))
 			}
 		}
-		return fmt.Errorf("there was a problem with the editor %q", strings.Join(e.Args, " "))
+		return fmt.Errorf("there was a problem with the editor %q: %w", strings.Join(e.Args, " "), err)
 	}
 	return nil
 }
