@@ -88,15 +88,7 @@ func NewTestAgent() *khttp.Agent {
 
 func TestAgentPost(t *testing.T) {
 	agent := NewTestAgent()
-
-	resp := &http.Response{
-		Status:        "200 OK",
-		StatusCode:    http.StatusOK,
-		Body:          io.NopCloser(bytes.NewReader([]byte("hello sig-release!"))),
-		ContentLength: 18,
-		Close:         true,
-		Request:       &http.Request{},
-	}
+	resp := getTestResponse()
 	defer resp.Body.Close()
 
 	// First simulate a successful request
@@ -118,14 +110,7 @@ func TestAgentPost(t *testing.T) {
 func TestAgentGet(t *testing.T) {
 	agent := NewTestAgent()
 
-	resp := &http.Response{
-		Status:        "200 OK",
-		StatusCode:    http.StatusOK,
-		Body:          io.NopCloser(bytes.NewReader([]byte("hello sig-release!"))),
-		ContentLength: 18,
-		Close:         true,
-		Request:       &http.Request{},
-	}
+	resp := getTestResponse()
 	defer resp.Body.Close()
 
 	// First simulate a successful request
@@ -142,6 +127,98 @@ func TestAgentGet(t *testing.T) {
 	agent.SetImplementation(fake)
 	_, err = agent.Get("http://www.example.com/")
 	require.NotNil(t, err)
+}
+
+func TestAgentGetToWriter(t *testing.T) {
+	agent := NewTestAgent()
+	for _, tc := range []struct {
+		n       string
+		prepare func(*httpfakes.FakeAgentImplementation, *http.Response)
+		mustErr bool
+	}{
+		{
+			n: "success",
+			prepare: func(fake *httpfakes.FakeAgentImplementation, resp *http.Response) {
+				fake.SendGetRequestReturns(resp, nil)
+			},
+		},
+		{
+			n: "fail",
+			prepare: func(fake *httpfakes.FakeAgentImplementation, resp *http.Response) {
+				fake.SendGetRequestReturns(resp, errors.New("HTTP Post error"))
+			},
+			mustErr: true,
+		},
+	} {
+		t.Run(tc.n, func(t *testing.T) {
+			// First simulate a successful request
+			fake := &httpfakes.FakeAgentImplementation{}
+			resp := getTestResponse()
+			defer resp.Body.Close()
+			tc.prepare(fake, resp)
+			var buf bytes.Buffer
+
+			agent.SetImplementation(fake)
+			err := agent.GetToWriter(&buf, "http://www.example.com/")
+			if tc.mustErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, buf.Bytes(), []byte("hello sig-release!"))
+		})
+	}
+}
+
+func getTestResponse() *http.Response {
+	return &http.Response{
+		Status:        "200 OK",
+		StatusCode:    http.StatusOK,
+		Body:          io.NopCloser(bytes.NewReader([]byte("hello sig-release!"))),
+		ContentLength: 18,
+		Close:         true,
+		Request:       &http.Request{},
+	}
+}
+
+func TestAgentPostToWriter(t *testing.T) {
+	for _, tc := range []struct {
+		n       string
+		prepare func(*httpfakes.FakeAgentImplementation, *http.Response)
+		mustErr bool
+	}{
+		{
+			n: "success",
+			prepare: func(fake *httpfakes.FakeAgentImplementation, resp *http.Response) {
+				fake.SendPostRequestReturns(resp, nil)
+			},
+		},
+		{
+			n: "fail",
+			prepare: func(fake *httpfakes.FakeAgentImplementation, resp *http.Response) {
+				fake.SendPostRequestReturns(resp, errors.New("HTTP Post error"))
+			},
+			mustErr: true,
+		},
+	} {
+		t.Run(tc.n, func(t *testing.T) {
+			agent := NewTestAgent()
+			// First simulate a successful request
+			fake := &httpfakes.FakeAgentImplementation{}
+			resp := getTestResponse()
+			defer resp.Body.Close()
+			tc.prepare(fake, resp)
+			var buf bytes.Buffer
+			agent.SetImplementation(fake)
+			err := agent.PostToWriter(&buf, "http://www.example.com/", []byte{})
+			if tc.mustErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, buf.Bytes(), []byte("hello sig-release!"))
+		})
+	}
 }
 
 func TestAgentOptions(t *testing.T) {
