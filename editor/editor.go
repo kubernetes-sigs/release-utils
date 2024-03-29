@@ -73,10 +73,10 @@ func defaultEnvShell() []string {
 func defaultEnvEditor(envs []string) ([]string, bool) {
 	var editor string
 	for _, env := range envs {
-		if len(env) > 0 {
+		if env != "" {
 			editor = os.Getenv(env)
 		}
-		if len(editor) > 0 {
+		if editor != "" {
 			break
 		}
 	}

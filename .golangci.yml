@@ -218,7 +218,6 @@ linters-settings:
       - stringsCompare
       - switchTrue
       - syncMapLoadAndDelete
-      - timeCmpSimplify
       - timeExprSimplify
       - tooManyResultsChecker
       - truncateCmp

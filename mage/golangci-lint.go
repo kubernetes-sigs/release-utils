@@ -191,7 +191,7 @@ func testGo(verbose bool, tags string, pkgs ...string) error {
 func VerifyGoMod() error {
 	minGoVersion := env.Default("MIN_GO_VERSION", defaultMinGoVersion)
 	if err := shx.RunV(
-		"go", "mod", "tidy", fmt.Sprintf("-compat=%s", minGoVersion),
+		"go", "mod", "tidy", "-compat="+minGoVersion,
 	); err != nil {
 		return fmt.Errorf("running go mod tidy: %w", err)
 	}
