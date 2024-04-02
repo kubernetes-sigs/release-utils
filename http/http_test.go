@@ -33,7 +33,7 @@ import (
 func TestGetURLResponseSuccess(t *testing.T) {
 	// Given
 	server := httptest.NewServer(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
+		func(w http.ResponseWriter, _ *http.Request) {
 			_, err := io.WriteString(w, "")
 			require.Nil(t, err)
 		}))
@@ -51,7 +51,7 @@ func TestGetURLResponseSuccessTrimmed(t *testing.T) {
 	// Given
 	const expected = "     some test     "
 	server := httptest.NewServer(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
+		func(w http.ResponseWriter, _ *http.Request) {
 			_, err := io.WriteString(w, expected)
 			require.Nil(t, err)
 		}))
@@ -68,7 +68,7 @@ func TestGetURLResponseSuccessTrimmed(t *testing.T) {
 func TestGetURLResponseFailedStatus(t *testing.T) {
 	// Given
 	server := httptest.NewServer(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
+		func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 		}))
 	defer server.Close()

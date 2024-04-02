@@ -37,11 +37,11 @@ import (
 
 const (
 	// golangci-lint
-	defaultGolangCILintVersion = "v1.55.2"
+	defaultGolangCILintVersion = "v1.57.1"
 	golangciCmd                = "golangci-lint"
 	golangciConfig             = ".golangci.yml"
 	golangciURLBase            = "https://raw.githubusercontent.com/golangci/golangci-lint"
-	defaultMinGoVersion        = "1.20"
+	defaultMinGoVersion        = "1.21"
 )
 
 // Ensure golangci-lint is installed and on the PATH.
@@ -191,7 +191,7 @@ func testGo(verbose bool, tags string, pkgs ...string) error {
 func VerifyGoMod() error {
 	minGoVersion := env.Default("MIN_GO_VERSION", defaultMinGoVersion)
 	if err := shx.RunV(
-		"go", "mod", "tidy", fmt.Sprintf("-compat=%s", minGoVersion),
+		"go", "mod", "tidy", "-compat="+minGoVersion,
 	); err != nil {
 		return fmt.Errorf("running go mod tidy: %w", err)
 	}

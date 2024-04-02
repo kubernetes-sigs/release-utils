@@ -18,7 +18,6 @@ package util
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -496,7 +495,7 @@ func TestStripSensitiveData(t *testing.T) {
 	for _, tc := range testCases {
 		testBytes := []byte(tc.text)
 		if tc.mustChange {
-			require.NotEqual(t, StripSensitiveData(testBytes), testBytes, fmt.Sprintf("Failed sanitizing %s", tc.text))
+			require.NotEqual(t, StripSensitiveData(testBytes), testBytes, "Failed sanitizing "+tc.text)
 		} else {
 			require.ElementsMatch(t, StripSensitiveData(testBytes), testBytes)
 		}

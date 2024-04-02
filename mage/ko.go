@@ -25,7 +25,7 @@ import (
 	"github.com/uwu-tools/magex/pkg/downloads"
 )
 
-const defaultKoVersion = "0.15.0"
+const defaultKoVersion = "0.15.2"
 
 // EnsureKO
 func EnsureKO(version string) error {

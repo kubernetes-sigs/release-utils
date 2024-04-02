@@ -160,7 +160,7 @@ func TestExtract(t *testing.T) {
 	}
 	require.Nil(t, filepath.Walk(
 		baseTmpDir,
-		func(filePath string, fileInfo os.FileInfo, err error) error {
+		func(_ string, fileInfo os.FileInfo, _ error) error {
 			require.Equal(t, res[0], fileInfo.Name())
 			if res[0] == "link" {
 				require.True(t, fileInfo.Mode()&os.ModeSymlink == os.ModeSymlink)
