@@ -18,7 +18,6 @@ package http
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -214,7 +213,7 @@ func (impl *defaultAgentImplementation) SendGetRequest(client *http.Client, url 
 func (a *Agent) readResponseToByteArray(response *http.Response) ([]byte, error) {
 	var b bytes.Buffer
 	if err := a.readResponse(response, &b); err != nil {
-		return nil, errors.New("reading")
+		return nil, fmt.Errorf("reading array buffer: %w", err)
 	}
 	return b.Bytes(), nil
 }
