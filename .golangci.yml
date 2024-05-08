@@ -23,7 +23,9 @@ linters:
     - asciicheck
     - bidichk
     - bodyclose
+    - canonicalheader
     - contextcheck
+    - copyloopvar
     - decorder
     - dogsled
     - dupl
@@ -31,7 +33,7 @@ linters:
     - errcheck
     - errchkjson
     - errname
-    - execinquery
+    - fatcontext
     - ginkgolinter
     - gocheckcompilerdirectives
     - gochecksumtype
@@ -53,6 +55,7 @@ linters:
     - grouper
     - importas
     - ineffassign
+    - intrange
     - loggercheck
     - makezero
     - mirror
@@ -70,6 +73,7 @@ linters:
     - revive
     - rowserrcheck
     - sloglint
+    - spancheck
     - sqlclosecheck
     - staticcheck
     - stylecheck
@@ -87,6 +91,7 @@ linters:
     # - cyclop
     # - depguard
     # - dupword
+    # - err113
     # - errorlint
     # - exhaustive
     # - exhaustruct
@@ -99,13 +104,12 @@ linters:
     # - gochecknoinits
     # - gocognit
     # - godot
-    # - goerr113
-    # - gomnd
     # - inamedparam
     # - interfacebloat
     # - ireturn
     # - lll
     # - maintidx
+    # - mnd
     # - nestif
     # - nilerr
     # - nilnil
@@ -113,8 +117,8 @@ linters:
     # - noctx
     # - nonamedreturns
     # - paralleltest
-    # - testifylint
     # - tagliatelle
+    # - testifylint
     # - testpackage
     # - thelper
     # - tparallel
@@ -139,6 +143,7 @@ linters-settings:
       - badLock
       - badRegexp
       - badSorting
+      - badSyncOnceFunc
       - boolExprSimplify
       - builtinShadow
       - builtinShadowDecl
@@ -191,6 +196,7 @@ linters-settings:
       - stringsCompare
       - syncMapLoadAndDelete
       - timeExprSimplify
+      - todoCommentWithoutDetail
       - tooManyResultsChecker
       - truncateCmp
       - typeAssertChain
@@ -203,6 +209,7 @@ linters-settings:
       - unnecessaryDefer
       - weakCond
       - yodaStyleExpr
+      # - whyNoLint
   nolintlint:
     # Enable to ensure that nolint directives are all used. Default is true.
     allow-unused: false
