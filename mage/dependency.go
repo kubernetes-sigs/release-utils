@@ -27,9 +27,10 @@ import (
 
 const (
 	// zeitgeist
-	defaultZeitgeistVersion = "v0.4.4"
+	defaultZeitgeistVersion = "v0.5.3"
 	zeitgeistCmd            = "zeitgeist"
 	zeitgeistModule         = "sigs.k8s.io/zeitgeist"
+	zeitgeistRemoteModule   = "sigs.k8s.io/zeitgeist/remote/zeitgeist"
 )
 
 // Ensure zeitgeist is installed and on the PATH.
@@ -52,6 +53,35 @@ func EnsureZeitgeist(version string) error {
 
 	if err := pkg.EnsurePackageWith(pkg.EnsurePackageOptions{
 		Name:           zeitgeistModule,
+		DefaultVersion: version,
+		VersionCommand: "version",
+	}); err != nil {
+		return fmt.Errorf("ensuring package: %w", err)
+	}
+
+	return nil
+}
+
+// Ensure zeitgeist remote is installed and on the PATH.
+func EnsureZeitgeistRemote(version string) error {
+	if version == "" {
+		log.Printf(
+			"A zeitgeist remote version to install was not specified. Using default version: %s",
+			defaultZeitgeistVersion,
+		)
+
+		version = defaultZeitgeistVersion
+	}
+
+	if _, err := semver.ParseTolerant(version); err != nil {
+		return fmt.Errorf(
+			"%s was not SemVer-compliant, cannot continue: %w",
+			version, err,
+		)
+	}
+
+	if err := pkg.EnsurePackageWith(pkg.EnsurePackageOptions{
+		Name:           zeitgeistRemoteModule,
 		DefaultVersion: version,
 		VersionCommand: "version",
 	}); err != nil {
