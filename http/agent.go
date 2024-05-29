@@ -46,6 +46,7 @@ type Agent struct {
 type AgentImplementation interface {
 	SendPostRequest(*http.Client, string, []byte, string) (*http.Response, error)
 	SendGetRequest(*http.Client, string) (*http.Response, error)
+	SendHeadRequest(*http.Client, string) (*http.Response, error)
 }
 
 type defaultAgentImplementation struct{}
@@ -183,6 +184,41 @@ func (a *Agent) PostRequest(url string, postData []byte) (response *http.Respons
 	}
 }
 
+// Head returns the body of a HEAD request
+func (a *Agent) Head(url string) (content []byte, err error) {
+	response, err := a.HeadRequest(url)
+	if err != nil {
+		return nil, fmt.Errorf("getting head request: %w", err)
+	}
+	defer response.Body.Close()
+
+	return a.readResponseToByteArray(response)
+}
+
+// HeadRequest sends a HEAD request to a URL and returns the request and response
+func (a *Agent) HeadRequest(url string) (response *http.Response, err error) {
+	logrus.Debugf("Sending HEAD request to %s", url)
+	try := 0
+	for {
+		response, err = a.AgentImplementation.SendHeadRequest(a.Client(), url)
+		try++
+		if err == nil || try >= int(a.options.Retries) {
+			return response, err
+		}
+		// Do exponential backoff...
+		waitTime := math.Pow(2, float64(try))
+		//  ... but wait no more than 1 min
+		if waitTime > 60 {
+			waitTime = a.options.MaxWaitTime.Seconds()
+		}
+		logrus.Errorf(
+			"Error getting URL (will retry %d more times in %.0f secs): %s",
+			int(a.options.Retries)-try, waitTime, err.Error(),
+		)
+		time.Sleep(time.Duration(waitTime) * time.Second)
+	}
+}
+
 // SendPostRequest sends the actual HTTP post to the server
 func (impl *defaultAgentImplementation) SendPostRequest(
 	client *http.Client, url string, postData []byte, contentType string,
@@ -204,6 +240,18 @@ func (impl *defaultAgentImplementation) SendGetRequest(client *http.Client, url 
 	response, err = client.Get(url)
 	if err != nil {
 		return response, fmt.Errorf("getting %s: %w", url, err)
+	}
+
+	return response, nil
+}
+
+// SendHeadRequest performs the actual request
+func (impl *defaultAgentImplementation) SendHeadRequest(client *http.Client, url string) (
+	response *http.Response, err error,
+) {
+	response, err = client.Head(url)
+	if err != nil {
+		return response, fmt.Errorf("sending head request %s: %w", url, err)
 	}
 
 	return response, nil

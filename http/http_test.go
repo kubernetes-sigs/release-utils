@@ -170,6 +170,28 @@ func TestAgentGetToWriter(t *testing.T) {
 	}
 }
 
+func TestAgentHead(t *testing.T) {
+	agent := NewTestAgent()
+
+	resp := getTestResponse()
+	defer resp.Body.Close()
+
+	// First simulate a successful request
+	fake := &httpfakes.FakeAgentImplementation{}
+	fake.SendHeadRequestReturns(resp, nil)
+
+	agent.SetImplementation(fake)
+	b, err := agent.Head("http://www.example.com/")
+	require.Nil(t, err)
+	require.Equal(t, b, []byte("hello sig-release!"))
+
+	// Now check error is handled
+	fake.SendHeadRequestReturns(resp, errors.New("HTTP Head error"))
+	agent.SetImplementation(fake)
+	_, err = agent.Head("http://www.example.com/")
+	require.NotNil(t, err)
+}
+
 func getTestResponse() *http.Response {
 	return &http.Response{
 		Status:        "200 OK",
