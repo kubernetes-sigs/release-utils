@@ -39,6 +39,20 @@ type FakeAgentImplementation struct {
 		result1 *httpa.Response
 		result2 error
 	}
+	SendHeadRequestStub        func(*httpa.Client, string) (*httpa.Response, error)
+	sendHeadRequestMutex       sync.RWMutex
+	sendHeadRequestArgsForCall []struct {
+		arg1 *httpa.Client
+		arg2 string
+	}
+	sendHeadRequestReturns struct {
+		result1 *httpa.Response
+		result2 error
+	}
+	sendHeadRequestReturnsOnCall map[int]struct {
+		result1 *httpa.Response
+		result2 error
+	}
 	SendPostRequestStub        func(*httpa.Client, string, []byte, string) (*httpa.Response, error)
 	sendPostRequestMutex       sync.RWMutex
 	sendPostRequestArgsForCall []struct {
@@ -124,6 +138,71 @@ func (fake *FakeAgentImplementation) SendGetRequestReturnsOnCall(i int, result1 
 	}{result1, result2}
 }
 
+func (fake *FakeAgentImplementation) SendHeadRequest(arg1 *httpa.Client, arg2 string) (*httpa.Response, error) {
+	fake.sendHeadRequestMutex.Lock()
+	ret, specificReturn := fake.sendHeadRequestReturnsOnCall[len(fake.sendHeadRequestArgsForCall)]
+	fake.sendHeadRequestArgsForCall = append(fake.sendHeadRequestArgsForCall, struct {
+		arg1 *httpa.Client
+		arg2 string
+	}{arg1, arg2})
+	stub := fake.SendHeadRequestStub
+	fakeReturns := fake.sendHeadRequestReturns
+	fake.recordInvocation("SendHeadRequest", []interface{}{arg1, arg2})
+	fake.sendHeadRequestMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeAgentImplementation) SendHeadRequestCallCount() int {
+	fake.sendHeadRequestMutex.RLock()
+	defer fake.sendHeadRequestMutex.RUnlock()
+	return len(fake.sendHeadRequestArgsForCall)
+}
+
+func (fake *FakeAgentImplementation) SendHeadRequestCalls(stub func(*httpa.Client, string) (*httpa.Response, error)) {
+	fake.sendHeadRequestMutex.Lock()
+	defer fake.sendHeadRequestMutex.Unlock()
+	fake.SendHeadRequestStub = stub
+}
+
+func (fake *FakeAgentImplementation) SendHeadRequestArgsForCall(i int) (*httpa.Client, string) {
+	fake.sendHeadRequestMutex.RLock()
+	defer fake.sendHeadRequestMutex.RUnlock()
+	argsForCall := fake.sendHeadRequestArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeAgentImplementation) SendHeadRequestReturns(result1 *httpa.Response, result2 error) {
+	fake.sendHeadRequestMutex.Lock()
+	defer fake.sendHeadRequestMutex.Unlock()
+	fake.SendHeadRequestStub = nil
+	fake.sendHeadRequestReturns = struct {
+		result1 *httpa.Response
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeAgentImplementation) SendHeadRequestReturnsOnCall(i int, result1 *httpa.Response, result2 error) {
+	fake.sendHeadRequestMutex.Lock()
+	defer fake.sendHeadRequestMutex.Unlock()
+	fake.SendHeadRequestStub = nil
+	if fake.sendHeadRequestReturnsOnCall == nil {
+		fake.sendHeadRequestReturnsOnCall = make(map[int]struct {
+			result1 *httpa.Response
+			result2 error
+		})
+	}
+	fake.sendHeadRequestReturnsOnCall[i] = struct {
+		result1 *httpa.Response
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeAgentImplementation) SendPostRequest(arg1 *httpa.Client, arg2 string, arg3 []byte, arg4 string) (*httpa.Response, error) {
 	var arg3Copy []byte
 	if arg3 != nil {
@@ -201,6 +280,8 @@ func (fake *FakeAgentImplementation) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.sendGetRequestMutex.RLock()
 	defer fake.sendGetRequestMutex.RUnlock()
+	fake.sendHeadRequestMutex.RLock()
+	defer fake.sendHeadRequestMutex.RUnlock()
 	fake.sendPostRequestMutex.RLock()
 	defer fake.sendPostRequestMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
