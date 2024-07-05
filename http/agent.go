@@ -34,7 +34,7 @@ const (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 //go:generate /usr/bin/env bash -c "cat ../scripts/boilerplate/boilerplate.generatego.txt httpfakes/fake_agent_implementation.go > httpfakes/_fake_agent_implementation.go && mv httpfakes/_fake_agent_implementation.go httpfakes/fake_agent_implementation.go"
 
-// Agent is an http agent
+// Agent is an http agent.
 type Agent struct {
 	options *agentOptions
 	AgentImplementation
@@ -51,7 +51,7 @@ type AgentImplementation interface {
 
 type defaultAgentImplementation struct{}
 
-// agentOptions has the configurable bits of the agent
+// agentOptions has the configurable bits of the agent.
 type agentOptions struct {
 	FailOnHTTPError bool          // Set to true to fail on HTTP Status > 299
 	Retries         uint          // Number of times to retry when errors happen
@@ -60,7 +60,7 @@ type agentOptions struct {
 	PostContentType string        // Content type to send when posting data
 }
 
-// String returns a string representation of the options
+// String returns a string representation of the options.
 func (ao *agentOptions) String() string {
 	return fmt.Sprintf(
 		"HTTP.Agent options: Timeout: %d - Retries: %d - FailOnHTTPError: %+v",
@@ -76,7 +76,7 @@ var defaultAgentOptions = &agentOptions{
 	PostContentType: defaultPostContentType,
 }
 
-// NewAgent return a new agent with default options
+// NewAgent return a new agent with default options.
 func NewAgent() *Agent {
 	return &Agent{
 		AgentImplementation: &defaultAgentImplementation{},
@@ -84,37 +84,37 @@ func NewAgent() *Agent {
 	}
 }
 
-// SetImplementation sets the agent implementation
+// SetImplementation sets the agent implementation.
 func (a *Agent) SetImplementation(impl AgentImplementation) {
 	a.AgentImplementation = impl
 }
 
-// WithTimeout sets the agent timeout
+// WithTimeout sets the agent timeout.
 func (a *Agent) WithTimeout(timeout time.Duration) *Agent {
 	a.options.Timeout = timeout
 	return a
 }
 
-// WithRetries sets the number of times we'll attempt to fetch the URL
+// WithRetries sets the number of times we'll attempt to fetch the URL.
 func (a *Agent) WithRetries(retries uint) *Agent {
 	a.options.Retries = retries
 	return a
 }
 
-// WithFailOnHTTPError determines if the agent fails on HTTP errors (HTTP status not in 200s)
+// WithFailOnHTTPError determines if the agent fails on HTTP errors (HTTP status not in 200s).
 func (a *Agent) WithFailOnHTTPError(flag bool) *Agent {
 	a.options.FailOnHTTPError = flag
 	return a
 }
 
-// Client return an net/http client preconfigured with the agent options
+// Client return an net/http client preconfigured with the agent options.
 func (a *Agent) Client() *http.Client {
 	return &http.Client{
 		Timeout: a.options.Timeout,
 	}
 }
 
-// Get returns the body a a GET request
+// Get returns the body a a GET request.
 func (a *Agent) Get(url string) (content []byte, err error) {
 	request, err := a.GetRequest(url)
 	if err != nil {
@@ -125,7 +125,7 @@ func (a *Agent) Get(url string) (content []byte, err error) {
 	return a.readResponseToByteArray(request)
 }
 
-// GetRequest sends a GET request to a URL and returns the request and response
+// GetRequest sends a GET request to a URL and returns the request and response.
 func (a *Agent) GetRequest(url string) (response *http.Response, err error) {
 	logrus.Debugf("Sending GET request to %s", url)
 	try := 0
@@ -149,7 +149,7 @@ func (a *Agent) GetRequest(url string) (response *http.Response, err error) {
 	}
 }
 
-// Post returns the body of a POST request
+// Post returns the body of a POST request.
 func (a *Agent) Post(url string, postData []byte) (content []byte, err error) {
 	response, err := a.PostRequest(url, postData)
 	if err != nil {
@@ -160,7 +160,7 @@ func (a *Agent) Post(url string, postData []byte) (content []byte, err error) {
 	return a.readResponseToByteArray(response)
 }
 
-// PostRequest sends the postData in a POST request to a URL and returns the request object
+// PostRequest sends the postData in a POST request to a URL and returns the request object.
 func (a *Agent) PostRequest(url string, postData []byte) (response *http.Response, err error) {
 	logrus.Debugf("Sending POST request to %s", url)
 	try := 0
@@ -184,7 +184,7 @@ func (a *Agent) PostRequest(url string, postData []byte) (response *http.Respons
 	}
 }
 
-// Head returns the body of a HEAD request
+// Head returns the body of a HEAD request.
 func (a *Agent) Head(url string) (content []byte, err error) {
 	response, err := a.HeadRequest(url)
 	if err != nil {
@@ -195,7 +195,7 @@ func (a *Agent) Head(url string) (content []byte, err error) {
 	return a.readResponseToByteArray(response)
 }
 
-// HeadRequest sends a HEAD request to a URL and returns the request and response
+// HeadRequest sends a HEAD request to a URL and returns the request and response.
 func (a *Agent) HeadRequest(url string) (response *http.Response, err error) {
 	logrus.Debugf("Sending HEAD request to %s", url)
 	try := 0
@@ -219,7 +219,7 @@ func (a *Agent) HeadRequest(url string) (response *http.Response, err error) {
 	}
 }
 
-// SendPostRequest sends the actual HTTP post to the server
+// SendPostRequest sends the actual HTTP post to the server.
 func (impl *defaultAgentImplementation) SendPostRequest(
 	client *http.Client, url string, postData []byte, contentType string,
 ) (response *http.Response, err error) {
@@ -233,7 +233,7 @@ func (impl *defaultAgentImplementation) SendPostRequest(
 	return response, nil
 }
 
-// SendGetRequest performs the actual request
+// SendGetRequest performs the actual request.
 func (impl *defaultAgentImplementation) SendGetRequest(client *http.Client, url string) (
 	response *http.Response, err error,
 ) {
@@ -245,7 +245,7 @@ func (impl *defaultAgentImplementation) SendGetRequest(client *http.Client, url 
 	return response, nil
 }
 
-// SendHeadRequest performs the actual request
+// SendHeadRequest performs the actual request.
 func (impl *defaultAgentImplementation) SendHeadRequest(client *http.Client, url string) (
 	response *http.Response, err error,
 ) {
@@ -257,7 +257,7 @@ func (impl *defaultAgentImplementation) SendHeadRequest(client *http.Client, url
 	return response, nil
 }
 
-// readResponseToByteArray returns the contents of an http response as a byte array
+// readResponseToByteArray returns the contents of an http response as a byte array.
 func (a *Agent) readResponseToByteArray(response *http.Response) ([]byte, error) {
 	var b bytes.Buffer
 	if err := a.readResponse(response, &b); err != nil {
@@ -290,7 +290,7 @@ func (a *Agent) readResponse(response *http.Response, w io.Writer) (err error) {
 	return err
 }
 
-// GetToWriter sends a get request and writes the response to an io.Writer
+// GetToWriter sends a get request and writes the response to an io.Writer.
 func (a *Agent) GetToWriter(w io.Writer, url string) error {
 	resp, err := a.AgentImplementation.SendGetRequest(a.Client(), url)
 	if err != nil {
@@ -300,7 +300,7 @@ func (a *Agent) GetToWriter(w io.Writer, url string) error {
 	return a.readResponse(resp, w)
 }
 
-// PostToWriter sends a request to a url and writes the response to an io.Writer
+// PostToWriter sends a request to a url and writes the response to an io.Writer.
 func (a *Agent) PostToWriter(w io.Writer, url string, postData []byte) error {
 	resp, err := a.AgentImplementation.SendPostRequest(a.Client(), url, postData, a.options.PostContentType)
 	if err != nil {

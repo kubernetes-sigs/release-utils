@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	// zeitgeist
+	// zeitgeist.
 	defaultZeitgeistVersion = "v0.5.3"
 	zeitgeistCmd            = "zeitgeist"
 	zeitgeistModule         = "sigs.k8s.io/zeitgeist"
@@ -91,7 +91,7 @@ func EnsureZeitgeistRemote(version string) error {
 	return nil
 }
 
-// VerifyDeps runs zeitgeist to verify dependency versions
+// VerifyDeps runs zeitgeist to verify dependency versions.
 func VerifyDeps(version, basePath, configPath string, localOnly bool) error {
 	if err := EnsureZeitgeist(version); err != nil {
 		return fmt.Errorf("ensuring zeitgeist is installed: %w", err)

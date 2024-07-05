@@ -34,12 +34,14 @@ linters:
     - errchkjson
     - errname
     - fatcontext
+    - gci
     - ginkgolinter
     - gocheckcompilerdirectives
     - gochecksumtype
     - goconst
     - gocritic
     - gocyclo
+    - godot
     - godox
     - gofmt
     - gofumpt
@@ -80,6 +82,7 @@ linters:
     - tagalign
     - tenv
     - testableexamples
+    - testifylint
     - typecheck
     - unconvert
     - unparam
@@ -99,11 +102,9 @@ linters:
     # - forbidigo
     # - forcetypeassert
     # - funlen
-    # - gci
     # - gochecknoglobals
     # - gochecknoinits
     # - gocognit
-    # - godot
     # - inamedparam
     # - interfacebloat
     # - ireturn
@@ -118,7 +119,6 @@ linters:
     # - nonamedreturns
     # - paralleltest
     # - tagliatelle
-    # - testifylint
     # - testpackage
     # - thelper
     # - tparallel
@@ -127,6 +127,13 @@ linters:
     # - wrapcheck
     # - wsl
 linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(k8s.io)
+      - prefix(sigs.k8s.io)
+      - localmodule
   gocyclo:
     min-complexity: 40
   godox:

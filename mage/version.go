@@ -24,7 +24,7 @@ import (
 	"github.com/uwu-tools/magex/shx"
 )
 
-// getVersion gets a description of the commit, e.g. v0.30.1 (latest) or v0.30.1-32-gfe72ff73 (canary)
+// getVersion gets a description of the commit, e.g. v0.30.1 (latest) or v0.30.1-32-gfe72ff73 (canary).
 func getVersion() (string, error) {
 	version, err := shx.Output("git", "describe", "--tags", "--always")
 	if err != nil {
@@ -38,12 +38,12 @@ func getVersion() (string, error) {
 	return "v0.0.0", nil
 }
 
-// getCommit gets the hash of the current commit
+// getCommit gets the hash of the current commit.
 func getCommit() (string, error) {
 	return shx.Output("git", "rev-parse", "--short", "HEAD")
 }
 
-// getGitState gets the state of the git repository
+// getGitState gets the state of the git repository.
 func getGitState() string {
 	_, err := shx.Output("git", "diff", "--quiet")
 	if err != nil {
@@ -53,7 +53,7 @@ func getGitState() string {
 	return "clean"
 }
 
-// getBuildDateTime gets the build date and time
+// getBuildDateTime gets the build date and time.
 func getBuildDateTime() (string, error) {
 	result, err := shx.Output("git", "log", "-1", "--pretty=%ct")
 	if err != nil {

@@ -29,11 +29,12 @@ import (
 	"github.com/uwu-tools/magex/shx"
 
 	kpath "k8s.io/utils/path"
+
 	"sigs.k8s.io/release-utils/command"
 )
 
 const (
-	// repo-infra (used for boilerplate script)
+	// repo-infra (used for boilerplate script).
 	defaultRepoInfraVersion = "v0.2.5"
 	repoInfraURLBase        = "https://raw.githubusercontent.com/kubernetes/repo-infra"
 )
@@ -118,7 +119,7 @@ func EnsureBoilerplateScript(version, boilerplateScript string, forceInstall boo
 	return nil
 }
 
-// VerifyBoilerplate runs copyright header checks
+// VerifyBoilerplate runs copyright header checks.
 func VerifyBoilerplate(version, binDir, boilerplateDir string, forceInstall bool) error {
 	if _, err := kpath.Exists(kpath.CheckSymlinkOnly, boilerplateDir); err != nil {
 		return fmt.Errorf(

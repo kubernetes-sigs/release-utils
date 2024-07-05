@@ -31,13 +31,14 @@ import (
 	"github.com/uwu-tools/magex/shx"
 
 	kpath "k8s.io/utils/path"
+
 	"sigs.k8s.io/release-utils/command"
 	"sigs.k8s.io/release-utils/env"
 )
 
 const (
-	// golangci-lint
-	defaultGolangCILintVersion = "v1.58.0"
+	// golangci-lint.
+	defaultGolangCILintVersion = "v1.59.1"
 	golangciCmd                = "golangci-lint"
 	golangciConfig             = ".golangci.yml"
 	golangciURLBase            = "https://raw.githubusercontent.com/golangci/golangci-lint"
@@ -114,7 +115,7 @@ func EnsureGolangCILint(version string, forceInstall bool) error {
 	return nil
 }
 
-// RunGolangCILint runs all golang linters
+// RunGolangCILint runs all golang linters.
 func RunGolangCILint(version string, forceInstall bool, args ...string) error {
 	if _, err := kpath.Exists(kpath.CheckSymlinkOnly, golangciConfig); err != nil {
 		return fmt.Errorf(
@@ -203,7 +204,7 @@ func VerifyGoMod() error {
 	return nil
 }
 
-// VerifyBuild builds the project for a chosen set of platforms
+// VerifyBuild builds the project for a chosen set of platforms.
 func VerifyBuild(scriptDir string) error {
 	wd, err := os.Getwd()
 	if err != nil {

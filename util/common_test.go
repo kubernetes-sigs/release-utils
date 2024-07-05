@@ -36,7 +36,7 @@ func TestPackagesAvailableSuccess(t *testing.T) {
 
 	for _, packages := range testcases {
 		available, err := PackagesAvailable(packages...)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.True(t, available)
 	}
 }
@@ -60,18 +60,18 @@ func TestPackagesAvailableFailure(t *testing.T) {
 
 	for _, packages := range testcases {
 		actual, err := PackagesAvailable(packages...)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.False(t, actual)
 	}
 }
 
 func TestMoreRecent(t *testing.T) {
 	baseTmpDir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	// Create test files.
 	testFileOne := filepath.Join(baseTmpDir, "testone.txt")
-	require.Nil(t, os.WriteFile(
+	require.NoError(t, os.WriteFile(
 		testFileOne,
 		[]byte("file-one-contents"),
 		os.FileMode(0o644),
@@ -80,7 +80,7 @@ func TestMoreRecent(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	testFileTwo := filepath.Join(baseTmpDir, "testtwo.txt")
-	require.Nil(t, os.WriteFile(
+	require.NoError(t, os.WriteFile(
 		testFileTwo,
 		[]byte("file-two-contents"),
 		os.FileMode(0o644),
@@ -165,13 +165,13 @@ func TestMoreRecent(t *testing.T) {
 
 func TestCopyFile(t *testing.T) {
 	srcDir, err := os.MkdirTemp("", "src")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	dstDir, err := os.MkdirTemp("", "dst")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	// Create test file.
 	srcFileOnePath := filepath.Join(srcDir, "testone.txt")
-	require.Nil(t, os.WriteFile(
+	require.NoError(t, os.WriteFile(
 		srcFileOnePath,
 		[]byte("file-one-contents"),
 		os.FileMode(0o644),
@@ -221,9 +221,9 @@ func TestCopyFile(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			copyErr := CopyFileLocal(tc.args.src, tc.args.dst, tc.args.required)
 			if tc.shouldError {
-				require.NotNil(t, copyErr)
+				require.Error(t, copyErr)
 			} else {
-				require.Nil(t, copyErr)
+				require.NoError(t, copyErr)
 			}
 			if copyErr == nil {
 				_, err := os.Stat(tc.args.dst)
@@ -237,20 +237,20 @@ func TestCopyFile(t *testing.T) {
 
 func TestCopyDirContentLocal(t *testing.T) {
 	srcDir, err := os.MkdirTemp("", "src")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	dstDir, err := os.MkdirTemp("", "dst")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	// Create test file.
 	srcFileOnePath := filepath.Join(srcDir, "testone.txt")
-	require.Nil(t, os.WriteFile(
+	require.NoError(t, os.WriteFile(
 		srcFileOnePath,
 		[]byte("file-one-contents"),
 		os.FileMode(0o644),
 	))
 
 	srcFileTwoPath := filepath.Join(srcDir, "testtwo.txt")
-	require.Nil(t, os.WriteFile(
+	require.NoError(t, os.WriteFile(
 		srcFileTwoPath,
 		[]byte("file-two-contents"),
 		os.FileMode(0o644),
@@ -300,18 +300,18 @@ func TestCopyDirContentLocal(t *testing.T) {
 
 func TestRemoveAndReplaceDir(t *testing.T) {
 	dir, err := os.MkdirTemp("", "rm")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	// Create test file.
 	fileOnePath := filepath.Join(dir, "testone.txt")
-	require.Nil(t, os.WriteFile(
+	require.NoError(t, os.WriteFile(
 		fileOnePath,
 		[]byte("file-one-contents"),
 		os.FileMode(0o644),
 	))
 
 	fileTwoPath := filepath.Join(dir, "testtwo.txt")
-	require.Nil(t, os.WriteFile(
+	require.NoError(t, os.WriteFile(
 		fileTwoPath,
 		[]byte("file-two-contents"),
 		os.FileMode(0o644),
@@ -357,11 +357,11 @@ func TestRemoveAndReplaceDir(t *testing.T) {
 
 func TestExist(t *testing.T) {
 	dir, err := os.MkdirTemp("", "rm")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	// Create test file.
 	fileOnePath := filepath.Join(dir, "testone.txt")
-	require.Nil(t, os.WriteFile(
+	require.NoError(t, os.WriteFile(
 		fileOnePath,
 		[]byte("file-one-contents"),
 		os.FileMode(0o644),
@@ -422,29 +422,29 @@ func TestExist(t *testing.T) {
 }
 
 func cleanupTmp(t *testing.T, dir string) {
-	require.Nil(t, os.RemoveAll(dir))
+	require.NoError(t, os.RemoveAll(dir))
 }
 
 func TestTagStringToSemver(t *testing.T) {
 	// Success
 	version, err := TagStringToSemver("v1.2.3")
-	require.Nil(t, err)
-	require.Equal(t, version, semver.Version{Major: 1, Minor: 2, Patch: 3})
+	require.NoError(t, err)
+	require.Equal(t, semver.Version{Major: 1, Minor: 2, Patch: 3}, version)
 
 	// No Major.Minor.Patch elements found
 	version, err = TagStringToSemver("invalid")
-	require.NotNil(t, err)
-	require.Equal(t, version, semver.Version{})
+	require.Error(t, err)
+	require.Equal(t, semver.Version{}, version)
 
 	// Version string empty
 	version, err = TagStringToSemver("")
-	require.NotNil(t, err)
-	require.Equal(t, version, semver.Version{})
+	require.Error(t, err)
+	require.Equal(t, semver.Version{}, version)
 }
 
 func TestSemverToTagString(t *testing.T) {
 	version := semver.Version{Major: 1, Minor: 2, Patch: 3}
-	require.Equal(t, SemverToTagString(version), "v1.2.3")
+	require.Equal(t, "v1.2.3", SemverToTagString(version))
 }
 
 func TestAddTagPrefix(t *testing.T) {
@@ -550,17 +550,17 @@ func TestCleanLogFile(t *testing.T) {
 	cleanLog := line1 + line2 + sanitizedTokenLine + line3 + line4 + line5 + "\n"
 
 	logfile, err := os.CreateTemp("", "clean-log-test-")
-	require.Nil(t, err, "creating test logfile")
+	require.NoError(t, err, "creating test logfile")
 	defer os.Remove(logfile.Name())
 	err = os.WriteFile(logfile.Name(), []byte(originalLog), os.FileMode(0o644))
-	require.Nil(t, err, "writing test file")
+	require.NoError(t, err, "writing test file")
 
 	// Now, run the cleanLogFile
 	err = CleanLogFile(logfile.Name())
-	require.Nil(t, err, "running log cleaner")
+	require.NoError(t, err, "running log cleaner")
 
 	resultingData, err := os.ReadFile(logfile.Name())
-	require.Nil(t, err, "reading modified file")
+	require.NoError(t, err, "reading modified file")
 	require.NotEmpty(t, resultingData)
 
 	// Must have changed

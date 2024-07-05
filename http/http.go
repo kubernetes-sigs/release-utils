@@ -20,7 +20,7 @@ import (
 	"bytes"
 )
 
-// GetURLResponse returns the HTTP response for the provided URL if the request succeeds
+// GetURLResponse returns the HTTP response for the provided URL if the request succeeds.
 func GetURLResponse(url string, trim bool) (string, error) {
 	resp, err := NewAgent().Get(url)
 	if err != nil {

@@ -39,7 +39,7 @@ const (
 	windowsShell  = "cmd"
 )
 
-// Editor holds the command-line args to fire up the editor
+// Editor holds the command-line args to fire up the editor.
 type Editor struct {
 	Args  []string
 	Shell bool

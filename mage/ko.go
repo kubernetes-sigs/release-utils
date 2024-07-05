@@ -27,7 +27,7 @@ import (
 
 const defaultKoVersion = "0.15.2"
 
-// EnsureKO
+// EnsureKO ensures that the ko binary exists.
 func EnsureKO(version string) error {
 	if version == "" {
 		version = defaultKoVersion
@@ -48,7 +48,7 @@ func EnsureKO(version string) error {
 	return nil
 }
 
-// Maybe we can  move this to release-utils
+// Maybe we can  move this to release-utils.
 func InstallKO(version string) error {
 	fmt.Println("Will install `ko`")
 	target := "ko"
