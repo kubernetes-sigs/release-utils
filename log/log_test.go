@@ -28,15 +28,15 @@ import (
 
 func TestToFile(t *testing.T) {
 	file, err := os.CreateTemp("", "log-test-")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	defer os.Remove(file.Name())
 
-	require.Nil(t, log.SetupGlobalLogger("info"))
-	require.Nil(t, log.ToFile(file.Name()))
+	require.NoError(t, log.SetupGlobalLogger("info"))
+	require.NoError(t, log.ToFile(file.Name()))
 	logrus.Info("test")
 
 	content, err := os.ReadFile(file.Name())
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	require.Contains(t, string(content), "info")
 	require.Contains(t, string(content), "test")

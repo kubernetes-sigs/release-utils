@@ -31,6 +31,6 @@ func TestVersionJSON(t *testing.T) {
 	sut := GetVersionInfo()
 	json, err := sut.JSONString()
 
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotEmpty(t, json)
 }

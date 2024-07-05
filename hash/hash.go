@@ -41,7 +41,7 @@ func SHA256ForFile(filename string) (string, error) {
 }
 
 // SHA1ForFile returns the hex-encoded sha1 hash for the provided filename.
-// TODO: check if we can remove this function
+// TODO: check if we can remove this function.
 func SHA1ForFile(filename string) (string, error) {
 	return ForFile(filename, sha1.New()) //nolint: gosec
 }

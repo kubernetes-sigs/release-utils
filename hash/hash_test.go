@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
 	kHash "sigs.k8s.io/release-utils/hash"
 )
 
@@ -36,10 +37,10 @@ func TestSHA512ForFile(t *testing.T) {
 		{ // success
 			prepare: func() string {
 				f, err := os.CreateTemp("", "")
-				require.Nil(t, err)
+				require.NoError(t, err)
 
 				_, err = f.WriteString("test")
-				require.Nil(t, err)
+				require.NoError(t, err)
 
 				return f.Name()
 			},
@@ -58,9 +59,9 @@ func TestSHA512ForFile(t *testing.T) {
 		res, err := kHash.SHA512ForFile(filename)
 
 		if tc.shouldError {
-			require.NotNil(t, err)
+			require.Error(t, err)
 		} else {
-			require.Nil(t, err)
+			require.NoError(t, err)
 			require.Equal(t, tc.expected, res)
 		}
 	}
@@ -75,10 +76,10 @@ func TestSHA256ForFile(t *testing.T) {
 		{ // success
 			prepare: func() string {
 				f, err := os.CreateTemp("", "")
-				require.Nil(t, err)
+				require.NoError(t, err)
 
 				_, err = f.WriteString("test")
-				require.Nil(t, err)
+				require.NoError(t, err)
 
 				return f.Name()
 			},
@@ -95,9 +96,9 @@ func TestSHA256ForFile(t *testing.T) {
 		res, err := kHash.SHA256ForFile(filename)
 
 		if tc.shouldError {
-			require.NotNil(t, err)
+			require.Error(t, err)
 		} else {
-			require.Nil(t, err)
+			require.NoError(t, err)
 			require.Equal(t, tc.expected, res)
 		}
 	}
@@ -112,10 +113,10 @@ func TestSHA1ForFile(t *testing.T) {
 		{ // success
 			prepare: func() string {
 				f, err := os.CreateTemp("", "")
-				require.Nil(t, err)
+				require.NoError(t, err)
 
 				_, err = f.WriteString("test")
-				require.Nil(t, err)
+				require.NoError(t, err)
 
 				return f.Name()
 			},
@@ -132,9 +133,9 @@ func TestSHA1ForFile(t *testing.T) {
 		res, err := kHash.SHA1ForFile(filename)
 
 		if tc.shouldError {
-			require.NotNil(t, err)
+			require.Error(t, err)
 		} else {
-			require.Nil(t, err)
+			require.NoError(t, err)
 			require.Equal(t, tc.expected, res)
 		}
 	}
@@ -149,10 +150,10 @@ func TestForFile(t *testing.T) {
 		{ // success
 			prepare: func() (string, hash.Hash) {
 				f, err := os.CreateTemp("", "")
-				require.Nil(t, err)
+				require.NoError(t, err)
 
 				_, err = f.WriteString("test")
-				require.Nil(t, err)
+				require.NoError(t, err)
 
 				return f.Name(), sha1.New() //nolint: gosec
 			},
@@ -177,9 +178,9 @@ func TestForFile(t *testing.T) {
 		res, err := kHash.ForFile(filename, hasher)
 
 		if tc.shouldError {
-			require.NotNil(t, err)
+			require.Error(t, err)
 		} else {
-			require.Nil(t, err)
+			require.NoError(t, err)
 			require.Equal(t, tc.expected, res)
 		}
 	}

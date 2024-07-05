@@ -29,7 +29,7 @@ type StepLogger struct {
 	currentStep uint
 }
 
-// NewStepLogger creates a new logger
+// NewStepLogger creates a new logger.
 func NewStepLogger(steps uint) *StepLogger {
 	return &StepLogger{
 		Logger:      logrus.StandardLogger(),

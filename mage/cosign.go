@@ -27,7 +27,7 @@ import (
 
 const defaultCosignVersion = "v2.2.4"
 
-// EnsureCosign makes sure that the specified cosign version is available
+// EnsureCosign makes sure that the specified cosign version is available.
 func EnsureCosign(version string) error {
 	if version == "" {
 		version = defaultCosignVersion
@@ -48,7 +48,7 @@ func EnsureCosign(version string) error {
 	return nil
 }
 
-// InstallCosign installs the required cosign version
+// InstallCosign installs the required cosign version.
 func InstallCosign(version string) error {
 	fmt.Println("Will install `cosign`")
 	target := "cosign"

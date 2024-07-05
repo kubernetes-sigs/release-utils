@@ -30,13 +30,13 @@ import (
 
 func TestCompress(t *testing.T) {
 	baseTmpDir, err := os.MkdirTemp("", "compress-")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(baseTmpDir)
 
 	for _, fileName := range []string{
 		"1.txt", "2.bin", "3.md",
 	} {
-		require.Nil(t, os.WriteFile(
+		require.NoError(t, os.WriteFile(
 			filepath.Join(baseTmpDir, fileName),
 			[]byte{1, 2, 3},
 			os.FileMode(0o644),
@@ -44,12 +44,12 @@ func TestCompress(t *testing.T) {
 	}
 
 	subTmpDir := filepath.Join(baseTmpDir, "sub")
-	require.Nil(t, os.MkdirAll(subTmpDir, os.FileMode(0o755)))
+	require.NoError(t, os.MkdirAll(subTmpDir, os.FileMode(0o755)))
 
 	for _, fileName := range []string{
 		"4.txt", "5.bin", "6.md",
 	} {
-		require.Nil(t, os.WriteFile(
+		require.NoError(t, os.WriteFile(
 			filepath.Join(subTmpDir, fileName),
 			[]byte{4, 5, 6},
 			os.FileMode(0o644),
@@ -58,7 +58,7 @@ func TestCompress(t *testing.T) {
 
 	logrus.SetLevel(logrus.DebugLevel)
 
-	require.Nil(t, os.Symlink(
+	require.NoError(t, os.Symlink(
 		filepath.Join(baseTmpDir, "1.txt"),
 		filepath.Join(subTmpDir, "link"),
 	))
@@ -69,11 +69,11 @@ func TestCompress(t *testing.T) {
 	}
 
 	tarFilePath := filepath.Join(baseTmpDir, "res.tar.gz")
-	require.Nil(t, Compress(tarFilePath, baseTmpDir, excludes...))
+	require.NoError(t, Compress(tarFilePath, baseTmpDir, excludes...))
 	require.FileExists(t, tarFilePath)
 
 	res := []string{"1.txt", "2.bin", "sub/4.txt", "sub/link"}
-	require.Nil(t, iterateTarball(
+	require.NoError(t, iterateTarball(
 		tarFilePath, func(_ *tar.Reader, header *tar.Header) (bool, error) {
 			require.Equal(t, res[0], header.Name)
 			res = res[1:]
@@ -84,16 +84,16 @@ func TestCompress(t *testing.T) {
 
 func TestCompressWithoutPreservingPath(t *testing.T) {
 	baseTmpDir, err := os.MkdirTemp("", "compress-")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(baseTmpDir)
 
 	compressDir := filepath.Join(baseTmpDir, "to_compress")
-	require.Nil(t, os.MkdirAll(compressDir, os.FileMode(0o755)))
+	require.NoError(t, os.MkdirAll(compressDir, os.FileMode(0o755)))
 
 	for _, fileName := range []string{
 		"1.txt", "2.bin", "3.md",
 	} {
-		require.Nil(t, os.WriteFile(
+		require.NoError(t, os.WriteFile(
 			filepath.Join(compressDir, fileName),
 			[]byte{1, 2, 3},
 			os.FileMode(0o644),
@@ -103,11 +103,11 @@ func TestCompressWithoutPreservingPath(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 
 	tarFilePath := filepath.Join(baseTmpDir, "res.tar.gz")
-	require.Nil(t, CompressWithoutPreservingPath(tarFilePath, compressDir))
+	require.NoError(t, CompressWithoutPreservingPath(tarFilePath, compressDir))
 	require.FileExists(t, tarFilePath)
 
 	res := []string{"1.txt", "2.bin", "3.md"}
-	require.Nil(t, iterateTarball(
+	require.NoError(t, iterateTarball(
 		tarFilePath, func(_ *tar.Reader, header *tar.Header) (bool, error) {
 			require.Equal(t, res[0], header.Name)
 			res = res[1:]
@@ -139,17 +139,17 @@ func TestExtract(t *testing.T) {
 		0x00, 0x00,
 	}
 	file, err := os.CreateTemp("", "tarball")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	defer os.Remove(file.Name())
 	_, err = file.Write(tarball)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	baseTmpDir, err := os.MkdirTemp("", "extract-")
-	require.Nil(t, err)
-	require.Nil(t, os.RemoveAll(baseTmpDir))
+	require.NoError(t, err)
+	require.NoError(t, os.RemoveAll(baseTmpDir))
 	defer os.RemoveAll(baseTmpDir)
 
-	require.Nil(t, Extract(file.Name(), baseTmpDir))
+	require.NoError(t, Extract(file.Name(), baseTmpDir))
 	res := []string{
 		filepath.Base(baseTmpDir),
 		"1.txt",
@@ -158,12 +158,12 @@ func TestExtract(t *testing.T) {
 		"4.txt",
 		"link",
 	}
-	require.Nil(t, filepath.Walk(
+	require.NoError(t, filepath.Walk(
 		baseTmpDir,
 		func(_ string, fileInfo os.FileInfo, _ error) error {
 			require.Equal(t, res[0], fileInfo.Name())
 			if res[0] == "link" {
-				require.True(t, fileInfo.Mode()&os.ModeSymlink == os.ModeSymlink)
+				require.Equal(t, os.ModeSymlink, fileInfo.Mode()&os.ModeSymlink)
 			}
 			res = res[1:]
 			return nil
@@ -173,7 +173,7 @@ func TestExtract(t *testing.T) {
 
 func TestReadFileFromGzippedTar(t *testing.T) {
 	baseTmpDir, err := os.MkdirTemp("", "tar-read-file-")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(baseTmpDir)
 
 	const (
@@ -182,12 +182,12 @@ func TestReadFileFromGzippedTar(t *testing.T) {
 	)
 	testTarPath := filepath.Join(baseTmpDir, "test.tar.gz")
 
-	require.Nil(t, os.WriteFile(
+	require.NoError(t, os.WriteFile(
 		filepath.Join(baseTmpDir, testFilePath),
 		[]byte(testFileContents),
 		os.FileMode(0o644),
 	))
-	require.Nil(t, Compress(testTarPath, baseTmpDir, nil))
+	require.NoError(t, Compress(testTarPath, baseTmpDir, nil))
 
 	type args struct {
 		tarPath  string
@@ -222,10 +222,10 @@ func TestReadFileFromGzippedTar(t *testing.T) {
 			r, err := ReadFileFromGzippedTar(tc.args.tarPath, tc.args.filePath)
 			if tc.want.shouldErr {
 				require.Nil(t, r)
-				require.NotNil(t, err)
+				require.Error(t, err)
 			} else {
 				file, err := io.ReadAll(r)
-				require.Nil(t, err)
+				require.NoError(t, err)
 				require.Equal(t, tc.want.fileContents, string(file))
 			}
 		})

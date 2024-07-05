@@ -26,6 +26,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
 	khttp "sigs.k8s.io/release-utils/http"
 	"sigs.k8s.io/release-utils/http/httpfakes"
 )
@@ -35,7 +36,9 @@ func TestGetURLResponseSuccess(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(
 		func(w http.ResponseWriter, _ *http.Request) {
 			_, err := io.WriteString(w, "")
-			require.Nil(t, err)
+			if err != nil {
+				t.Fail()
+			}
 		}))
 	defer server.Close()
 
@@ -43,7 +46,7 @@ func TestGetURLResponseSuccess(t *testing.T) {
 	actual, err := khttp.GetURLResponse(server.URL, false)
 
 	// Then
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Empty(t, actual)
 }
 
@@ -53,7 +56,9 @@ func TestGetURLResponseSuccessTrimmed(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(
 		func(w http.ResponseWriter, _ *http.Request) {
 			_, err := io.WriteString(w, expected)
-			require.Nil(t, err)
+			if err != nil {
+				t.Fail()
+			}
 		}))
 	defer server.Close()
 
@@ -61,7 +66,7 @@ func TestGetURLResponseSuccessTrimmed(t *testing.T) {
 	actual, err := khttp.GetURLResponse(server.URL, true)
 
 	// Then
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, strings.TrimSpace(expected), actual)
 }
 
@@ -77,7 +82,7 @@ func TestGetURLResponseFailedStatus(t *testing.T) {
 	_, err := khttp.GetURLResponse(server.URL, true)
 
 	// Then
-	require.NotNil(t, err)
+	require.Error(t, err)
 }
 
 func NewTestAgent() *khttp.Agent {
@@ -97,14 +102,14 @@ func TestAgentPost(t *testing.T) {
 
 	agent.SetImplementation(fake)
 	body, err := agent.Post("http://www.example.com/", []byte("Test string"))
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, body, []byte("hello sig-release!"))
 
 	// Now check error is handled
 	fake.SendPostRequestReturns(resp, errors.New("HTTP Post error"))
 	agent.SetImplementation(fake)
 	_, err = agent.Post("http://www.example.com/", []byte("Test string"))
-	require.NotNil(t, err)
+	require.Error(t, err)
 }
 
 func TestAgentGet(t *testing.T) {
@@ -119,14 +124,14 @@ func TestAgentGet(t *testing.T) {
 
 	agent.SetImplementation(fake)
 	b, err := agent.Get("http://www.example.com/")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, b, []byte("hello sig-release!"))
 
 	// Now check error is handled
 	fake.SendGetRequestReturns(resp, errors.New("HTTP Post error"))
 	agent.SetImplementation(fake)
 	_, err = agent.Get("http://www.example.com/")
-	require.NotNil(t, err)
+	require.Error(t, err)
 }
 
 func TestAgentGetToWriter(t *testing.T) {
@@ -182,14 +187,14 @@ func TestAgentHead(t *testing.T) {
 
 	agent.SetImplementation(fake)
 	b, err := agent.Head("http://www.example.com/")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, b, []byte("hello sig-release!"))
 
 	// Now check error is handled
 	fake.SendHeadRequestReturns(resp, errors.New("HTTP Head error"))
 	agent.SetImplementation(fake)
 	_, err = agent.Head("http://www.example.com/")
-	require.NotNil(t, err)
+	require.Error(t, err)
 }
 
 func getTestResponse() *http.Response {
@@ -262,9 +267,9 @@ func TestAgentOptions(t *testing.T) {
 	// Test FailOnHTTPError
 	// First we fail on server errors
 	_, err := agent.WithFailOnHTTPError(true).Get("http://example.com/")
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	// Then we just note them and do not fail
 	_, err = agent.WithFailOnHTTPError(false).Get("http://example.com/")
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
