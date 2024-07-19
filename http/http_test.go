@@ -19,6 +19,7 @@ package http_test
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -272,4 +273,143 @@ func TestAgentOptions(t *testing.T) {
 	// Then we just note them and do not fail
 	_, err = agent.WithFailOnHTTPError(false).Get("http://example.com/")
 	require.NoError(t, err)
+}
+
+// closeHTTPResponseGroup is an internal func that closes the response bodies.
+func closeHTTPResponseGroup(resps []*http.Response) {
+	for i := range resps {
+		if resps[i] == nil {
+			continue
+		}
+		resps[i].Body.Close()
+	}
+}
+
+func TestAgentGroupGetRequest(t *testing.T) {
+	fake := &httpfakes.FakeAgentImplementation{}
+	fakeUrls := []string{"http://www/1", "http://www/2", "http://www/3"}
+	fake.SendGetRequestCalls(func(_ *http.Client, s string) (*http.Response, error) {
+		switch s {
+		case fakeUrls[0]:
+			return &http.Response{
+				Status:        "Fake OK",
+				StatusCode:    http.StatusOK,
+				Body:          io.NopCloser(bytes.NewReader([]byte("hello sig-release!"))),
+				ContentLength: 18,
+				Close:         true,
+				Request:       &http.Request{},
+			}, nil
+		case fakeUrls[1]:
+			return &http.Response{
+				Status:        "Fake not found",
+				StatusCode:    http.StatusNotFound,
+				Body:          io.NopCloser(bytes.NewReader([]byte("hello sig-release!"))),
+				ContentLength: 18,
+				Close:         true,
+				Request:       &http.Request{},
+			}, nil
+		case fakeUrls[2]:
+			return nil, errors.New("malformed url")
+		}
+		return nil, nil
+	})
+
+	for _, tc := range []struct {
+		name    string
+		workers int
+	}{
+		{"no-parallelism", 1}, {"one-per-request", 3}, {"spare-workers", 5},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			// No retries as the errors are synthetic
+			agent := NewTestAgent().WithRetries(0).WithFailOnHTTPError(false).WithMaxParallel(tc.workers)
+			agent.SetImplementation(fake)
+
+			//nolint: bodyclose // The next line closes them
+			resps, errs := agent.GetRequestGroup(fakeUrls)
+			defer closeHTTPResponseGroup(resps)
+
+			require.Len(t, resps, 3)
+			require.Len(t, errs, 3)
+
+			require.NoError(t, errs[0])
+			require.NoError(t, errs[1])
+			require.Error(t, errs[2])
+
+			require.Equal(t, http.StatusOK, resps[0].StatusCode)
+			require.Equal(t, http.StatusNotFound, resps[1].StatusCode)
+			require.Nil(t, resps[2])
+		})
+	}
+}
+
+func TestAgentPostRequestGroup(t *testing.T) {
+	fake := &httpfakes.FakeAgentImplementation{}
+	fakeUrls := []string{"http://www/1", "http://www/2", "http://www/3", "http://www/4"}
+
+	// postData is one element shorter than urls to test permafail on nil post data
+	postData := [][]byte{[]byte("hey 1"), []byte("hey 2"), []byte("hey 3")}
+
+	fake.SendPostRequestCalls(func(_ *http.Client, s string, _ []byte, _ string) (*http.Response, error) {
+		switch s {
+		case fakeUrls[0]:
+			return &http.Response{
+				Status:        "Fake OK",
+				StatusCode:    http.StatusOK,
+				Body:          io.NopCloser(bytes.NewReader([]byte("hello sig-release!"))),
+				ContentLength: 18,
+				Close:         true,
+				Request:       &http.Request{},
+			}, nil
+		case fakeUrls[1]:
+			return &http.Response{
+				Status:        "Fake not found",
+				StatusCode:    http.StatusNotFound,
+				Body:          io.NopCloser(bytes.NewReader([]byte("hello sig-release!"))),
+				ContentLength: 18,
+				Close:         true,
+				Request:       &http.Request{},
+			}, nil
+		case fakeUrls[2]:
+			return nil, errors.New("malformed url")
+		}
+		return nil, nil
+	})
+
+	for _, tc := range []struct {
+		name    string
+		workers int
+	}{
+		{"no-parallelism", 1}, {"one-per-request", 3}, {"spare-workers", 5},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			// No retries as the errors are synthetic
+			agent := NewTestAgent().WithRetries(0).WithFailOnHTTPError(false).WithMaxParallel(tc.workers)
+			agent.SetImplementation(fake)
+
+			//nolint: bodyclose
+			resps, errs := agent.PostRequestGroup(fakeUrls, postData)
+			defer func() {
+				for i := range resps {
+					if resps[i] != nil {
+						resps[i].Body.Close()
+					}
+				}
+			}()
+
+			require.Len(t, resps, 4)
+			require.Len(t, errs, 4)
+
+			require.NoError(t, errs[0])
+			require.NoError(t, errs[1])
+			require.Error(t, errs[2], fmt.Sprintf("%+v", resps[2]))
+			require.Error(t, errs[3])
+
+			require.Equal(t, http.StatusOK, resps[0].StatusCode)
+			require.Equal(t, http.StatusNotFound, resps[1].StatusCode)
+			require.Nil(t, resps[2])
+			require.Nil(t, resps[3])
+		})
+	}
 }
