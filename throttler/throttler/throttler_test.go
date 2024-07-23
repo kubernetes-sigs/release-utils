@@ -83,6 +83,7 @@ func TestThrottle(t *testing.T) {
 		for range test.Jobs {
 			go func(th *Throttler) {
 				defer th.Done(nil)
+				//nolint: gosec // Bump to rand/v2 when the library moves to go 1.22+
 				time.Sleep(time.Duration(rand.Intn(5)) * time.Millisecond)
 			}(th)
 			th.Throttle()
@@ -131,7 +132,7 @@ func TestThrottleWithErrors(t *testing.T) {
 					err = fmt.Errorf("Error on %s", job)
 				}
 				defer th.Done(err)
-
+				//nolint: gosec // Bump to rand/v2 when the library moves to go 1.22+
 				time.Sleep(time.Duration(rand.Intn(5)) * time.Millisecond)
 			}(job, th)
 			th.Throttle()
@@ -283,6 +284,7 @@ func TestSetMaxWorkers(t *testing.T) {
 			}
 			go func(th *Throttler) {
 				defer th.Done(nil)
+				//nolint: gosec // Bump to rand/v2 when the library moves to go 1.22+
 				time.Sleep(time.Duration(rand.Intn(5)) * time.Millisecond)
 			}(th)
 			th.Throttle()
