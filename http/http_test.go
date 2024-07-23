@@ -93,7 +93,8 @@ func NewTestAgent() *khttp.Agent {
 }
 
 func TestAgentPost(t *testing.T) {
-	agent := NewTestAgent()
+	t.Parallel()
+	agent := NewTestAgent().WithRetries(0)
 	resp := getTestResponse()
 	defer resp.Body.Close()
 
@@ -114,25 +115,50 @@ func TestAgentPost(t *testing.T) {
 }
 
 func TestAgentGet(t *testing.T) {
-	agent := NewTestAgent()
+	t.Parallel()
+	agent := NewTestAgent().WithRetries(0)
 
-	resp := getTestResponse()
-	defer resp.Body.Close()
-
-	// First simulate a successful request
-	fake := &httpfakes.FakeAgentImplementation{}
-	fake.SendGetRequestReturns(resp, nil)
-
-	agent.SetImplementation(fake)
-	b, err := agent.Get("http://www.example.com/")
-	require.NoError(t, err)
-	require.Equal(t, b, []byte("hello sig-release!"))
-
-	// Now check error is handled
-	fake.SendGetRequestReturns(resp, errors.New("HTTP Post error"))
-	agent.SetImplementation(fake)
-	_, err = agent.Get("http://www.example.com/")
-	require.Error(t, err)
+	for _, tc := range []struct {
+		name     string
+		mustErr  bool
+		expected []byte
+		prepare  func(*httpfakes.FakeAgentImplementation)
+	}{
+		{
+			"no-error",
+			false,
+			[]byte("hello sig-release!"),
+			func(fai *httpfakes.FakeAgentImplementation) {
+				t.Helper()
+				resp := getTestResponse()
+				defer resp.Body.Close()
+				fai.SendGetRequestReturns(resp, nil)
+			},
+		}, {
+			"error",
+			true,
+			nil,
+			func(fai *httpfakes.FakeAgentImplementation) {
+				t.Helper()
+				fai.SendGetRequestReturns(nil, errors.New("HTTP Post error"))
+			},
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			fake := &httpfakes.FakeAgentImplementation{}
+			tc.prepare(fake)
+			agent.SetImplementation(fake)
+			b, err := agent.Get("http://www.example.com/")
+			if tc.mustErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, b)
+		})
+	}
 }
 
 func TestAgentGetToWriter(t *testing.T) {
@@ -177,7 +203,8 @@ func TestAgentGetToWriter(t *testing.T) {
 }
 
 func TestAgentHead(t *testing.T) {
-	agent := NewTestAgent()
+	t.Parallel()
+	agent := NewTestAgent().WithRetries(0)
 
 	resp := getTestResponse()
 	defer resp.Body.Close()
