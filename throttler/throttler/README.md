@@ -1,17 +1,26 @@
-# Throttler - intelligent WaitGroups
+# Throttler - Intelligent WaitGroups
 
-[![GoDoc](https://godoc.org/github.com/nozzle/throttler?status.svg)](http://godoc.org/github.com/nozzle/throttler) [![Coverage Status](https://coveralls.io/repos/nozzle/throttler/badge.svg?branch=master)](https://coveralls.io/r/nozzle/throttler?branch=master)
+[![GoDoc](https://pkg.go.dev/sigs.k8s.io/release-utils/throttler?status.svg)](https://pkg.go.dev/sigs.k8s.io/release-utils/throttler?status.svg)
 
+__Note:__ This package was adopted by the Kubernetes RelEng team to continue its
+maintenance, it was forked from github.com/nozzle/throttle at 
+[2ea9822](https://github.com/nozzle/throttler/commit/2ea982251481626167b7f83be1434b5c42540c1a).
 
- Throttler fills the gap between sync.WaitGroup and manually monitoring your goroutines with channels. The API is almost identical to Wait Groups, but it allows you to set a max number of workers that can be running simultaneously. It uses channels internally to block until a job completes by calling Done() or until all jobs have been completed. It also provides a built in error channel that captures your goroutine errors and provides access to them as `[]error` after you exit the loop.
+Throttler fills the gap between sync.WaitGroup and manually monitoring your 
+goroutines with channels. The API is almost identical to Wait Groups, but it 
+allows you to set a max number of workers that can be running simultaneously. 
+It uses channels internally to block until a job completes by calling Done() or 
+until all jobs have been completed. It also provides a built in error channel 
+that captures your goroutine errors and provides access to them as `[]error` 
+after you exit the loop.
 
-See a fully functional example on the playground at http://bit.ly/throttler-v3
+See a fully functional example of the original module on the playground at http://bit.ly/throttler-v3
 
 Compare the Throttler example to the sync.WaitGroup example from http://golang.org/pkg/sync/#example_WaitGroup
 
 ### How to use Throttler
 
-```
+```golang
 // This example fetches several URLs concurrently,
 // using a Throttler to block until all the fetches are complete.
 // Compare to http://golang.org/pkg/sync/#example_WaitGroup
@@ -42,7 +51,7 @@ func ExampleThrottler() {
 
 ### vs How to use a sync.WaitGroup
 
-```
+```golang
 // This example fetches several URLs concurrently,
 // using a WaitGroup to block until all the fetches are complete.
 func ExampleWaitGroup() {

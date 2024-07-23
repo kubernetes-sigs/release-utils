@@ -1,3 +1,23 @@
+/*
+Copyright 2024 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// This package was forked and adapted from the original at
+// pkg:golang/github.com/nozzle/throttler@2ea982251481626167b7f83be1434b5c42540c1a
+// full commit history has been preserved.
+
 package throttler
 
 import (
@@ -10,7 +30,7 @@ import (
 )
 
 func TestThrottle(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		Desc       string
 		Jobs       []string
 		MaxWorkers int
@@ -18,29 +38,35 @@ func TestThrottle(t *testing.T) {
 	}{
 		{
 			"Standard implementation",
-			[]string{"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
+			[]string{
+				"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
 				"job11", "job12", "job13", "job14", "job15", "job16", "job17", "job18", "job19", "job20",
 				"job21", "job22", "job23", "job24", "job25", "job26", "job27", "job28", "job29", "job30",
 				"job31", "job32", "job33", "job34", "job35", "job36", "job37", "job38", "job39", "job40",
-				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50"},
+				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50",
+			},
 			5,
 			-1,
 		}, {
 			"Incorrectly has 0 as TotalWorkers",
-			[]string{"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
+			[]string{
+				"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
 				"job11", "job12", "job13", "job14", "job15", "job16", "job17", "job18", "job19", "job20",
 				"job21", "job22", "job23", "job24", "job25", "job26", "job27", "job28", "job29", "job30",
 				"job31", "job32", "job33", "job34", "job35", "job36", "job37", "job38", "job39", "job40",
-				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50"},
+				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50",
+			},
 			5,
 			0,
 		}, {
 			"More workers than jobs",
-			[]string{"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
+			[]string{
+				"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
 				"job11", "job12", "job13", "job14", "job15", "job16", "job17", "job18", "job19", "job20",
 				"job21", "job22", "job23", "job24", "job25", "job26", "job27", "job28", "job29", "job30",
 				"job31", "job32", "job33", "job34", "job35", "job36", "job37", "job38", "job39", "job40",
-				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50"},
+				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50",
+			},
 			50000,
 			-1,
 		},
@@ -66,7 +92,7 @@ func TestThrottle(t *testing.T) {
 }
 
 func TestThrottleWithErrors(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		Desc       string
 		Jobs       []string
 		MaxWorkers int
@@ -74,11 +100,13 @@ func TestThrottleWithErrors(t *testing.T) {
 	}{
 		{
 			"Standard implementation",
-			[]string{"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
+			[]string{
+				"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
 				"job11", "job12", "job13", "job14", "job15", "job16", "job17", "job18", "job19", "job20",
 				"job21", "job22", "job23", "job24", "job25", "job26", "job27", "job28", "job29", "job30",
 				"job31", "job32", "job33", "job34", "job35", "job36", "job37", "job38", "job39", "job40",
-				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50"},
+				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50",
+			},
 			5,
 			-1,
 		}, {
@@ -127,7 +155,7 @@ func TestThrottlePanic(t *testing.T) {
 }
 
 func TestBatchedThrottler(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		Desc                  string
 		ToBeBatched           []string
 		MaxWorkers            int
@@ -136,7 +164,8 @@ func TestBatchedThrottler(t *testing.T) {
 	}{
 		{
 			"Standard implementation",
-			[]string{"item01", "item02", "item03", "item04", "item05", "item06", "item07", "item08", "item09", "item10",
+			[]string{
+				"item01", "item02", "item03", "item04", "item05", "item06", "item07", "item08", "item09", "item10",
 				"item11", "item12", "item13", "item14", "item15", "item16", "item17", "item18", "item19", "item20",
 				"item21", "item22", "item23", "item24", "item25", "item26", "item27", "item28", "item29", "item30",
 				"item31", "item32", "item33", "item34", "item35", "item36", "item37", "item38", "item39", "item40",
@@ -196,7 +225,7 @@ func TestBatchedThrottler(t *testing.T) {
 }
 
 func TestSetMaxWorkers(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		Desc              string
 		Jobs              []string
 		InitialMaxWorkers int
@@ -205,31 +234,37 @@ func TestSetMaxWorkers(t *testing.T) {
 	}{
 		{
 			"Standard implementation",
-			[]string{"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
+			[]string{
+				"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
 				"job11", "job12", "job13", "job14", "job15", "job16", "job17", "job18", "job19", "job20",
 				"job21", "job22", "job23", "job24", "job25", "job26", "job27", "job28", "job29", "job30",
 				"job31", "job32", "job33", "job34", "job35", "job36", "job37", "job38", "job39", "job40",
-				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50"},
+				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50",
+			},
 			1,
 			5,
 			-1,
 		}, {
 			"Incorrectly has 0 as TotalWorkers",
-			[]string{"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
+			[]string{
+				"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
 				"job11", "job12", "job13", "job14", "job15", "job16", "job17", "job18", "job19", "job20",
 				"job21", "job22", "job23", "job24", "job25", "job26", "job27", "job28", "job29", "job30",
 				"job31", "job32", "job33", "job34", "job35", "job36", "job37", "job38", "job39", "job40",
-				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50"},
+				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50",
+			},
 			1,
 			5,
 			0,
 		}, {
 			"More workers than jobs",
-			[]string{"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
+			[]string{
+				"job01", "job02", "job03", "job04", "job05", "job06", "job07", "job08", "job09", "job10",
 				"job11", "job12", "job13", "job14", "job15", "job16", "job17", "job18", "job19", "job20",
 				"job21", "job22", "job23", "job24", "job25", "job26", "job27", "job28", "job29", "job30",
 				"job31", "job32", "job33", "job34", "job35", "job36", "job37", "job38", "job39", "job40",
-				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50"},
+				"job41", "job42", "job43", "job44", "job45", "job46", "job47", "job48", "job49", "job50",
+			},
 			1,
 			50000,
 			-1,

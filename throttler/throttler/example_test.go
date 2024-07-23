@@ -1,6 +1,24 @@
-package throttler
+/*
+Copyright 2024 The Kubernetes Authors.
 
-import "github.com/nozzle/throttler"
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// This package was forked and adapted from the original at
+// pkg:golang/github.com/nozzle/throttler@2ea982251481626167b7f83be1434b5c42540c1a
+// full commit history has been preserved.
+
+package throttler
 
 import "fmt"
 
@@ -49,7 +67,7 @@ func ExampleThrottler() {
 // using a Throttler to block until all the fetches are complete
 // and checks the errors returned.
 // Compare to http://golang.org/pkg/sync/#example_WaitGroup
-func ExampleThrottler_errors() error {
+func ExampleThrottler_errors() {
 	var urls = []string{
 		"http://www.golang.org/",
 		"http://www.google.com/",
@@ -75,8 +93,5 @@ func ExampleThrottler_errors() error {
 		for i, err := range t.Errs() {
 			fmt.Printf("error #%d: %s", i, err)
 		}
-		return t.Err()
 	}
-
-	return nil
 }
