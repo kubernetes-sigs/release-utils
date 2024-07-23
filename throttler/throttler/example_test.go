@@ -20,24 +20,31 @@ limitations under the License.
 
 package throttler
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 type httpPkg struct{}
 
-func (httpPkg) Get(url string) error { return nil }
+func (httpPkg) Get(_ string) error { return nil }
 
 var http httpPkg
 
 // This example fetches several URLs concurrently,
 // using a WaitGroup to block until all the fetches are complete.
+//
+//nolint:testableexamples // TODO - Rewrite examples
 func ExampleWaitGroup() {
 }
 
 // This example fetches several URLs concurrently,
 // using a Throttler to block until all the fetches are complete.
 // Compare to http://golang.org/pkg/sync/#example_WaitGroup
+//
+//nolint:testableexamples // TODO - Rewrite examples
 func ExampleThrottler() {
-	var urls = []string{
+	urls := []string{
 		"http://www.golang.org/",
 		"http://www.google.com/",
 		"http://www.somestupidname.com/",
@@ -67,8 +74,10 @@ func ExampleThrottler() {
 // using a Throttler to block until all the fetches are complete
 // and checks the errors returned.
 // Compare to http://golang.org/pkg/sync/#example_WaitGroup
+//
+//nolint:testableexamples // TODO - Rewrite examples
 func ExampleThrottler_errors() {
-	var urls = []string{
+	urls := []string{
 		"http://www.golang.org/",
 		"http://www.google.com/",
 		"http://www.somestupidname.com/",
@@ -82,7 +91,9 @@ func ExampleThrottler_errors() {
 			// so it can dispatch another worker
 			defer t.Done(nil)
 			// Fetch the URL.
-			http.Get(url)
+			if err := http.Get(url); err != nil {
+				fmt.Fprintf(os.Stderr, "error fetching %q: %v", url, err)
+			}
 		}(url)
 		// Pauses until a worker is available or all jobs have been completed
 		t.Throttle()

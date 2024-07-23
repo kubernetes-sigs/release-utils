@@ -27,6 +27,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestThrottle(t *testing.T) {
@@ -78,16 +80,14 @@ func TestThrottle(t *testing.T) {
 			totalJobs = test.TotalJobs
 		}
 		th := New(test.MaxWorkers, totalJobs)
-		for _, job := range test.Jobs {
-			go func(job string, th *Throttler) {
+		for range test.Jobs {
+			go func(th *Throttler) {
 				defer th.Done(nil)
 				time.Sleep(time.Duration(rand.Intn(5)) * time.Millisecond)
-			}(job, th)
+			}(th)
 			th.Throttle()
 		}
-		if th.Err() != nil {
-			fmt.Println("err:", th.Err())
-		}
+		require.NoError(t, th.Err())
 	}
 }
 
@@ -125,8 +125,8 @@ func TestThrottleWithErrors(t *testing.T) {
 		th := New(test.MaxWorkers, totalJobs)
 		for _, job := range test.Jobs {
 			go func(job string, th *Throttler) {
-				jobNum, _ := strconv.ParseInt(job[len(job)-2:], 10, 8)
 				var err error
+				jobNum, err := strconv.ParseInt(job[len(job)-2:], 10, 8)
 				if jobNum%2 != 0 {
 					err = fmt.Errorf("Error on %s", job)
 				}
@@ -277,19 +277,17 @@ func TestSetMaxWorkers(t *testing.T) {
 			totalJobs = test.TotalJobs
 		}
 		th := New(test.InitialMaxWorkers, totalJobs)
-		for i, job := range test.Jobs {
+		for i := range test.Jobs {
 			if i == test.InitialMaxWorkers+1 {
 				th.SetMaxWorkers(test.EndMaxWorkers)
 			}
-			go func(job string, th *Throttler) {
+			go func(th *Throttler) {
 				defer th.Done(nil)
 				time.Sleep(time.Duration(rand.Intn(5)) * time.Millisecond)
-			}(job, th)
+			}(th)
 			th.Throttle()
 		}
-		if th.Err() != nil {
-			fmt.Println("err:", th.Err())
-		}
+		require.NoError(t, th.Err())
 	}
 }
 

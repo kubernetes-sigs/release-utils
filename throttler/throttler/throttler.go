@@ -29,7 +29,11 @@ limitations under the License.
 //
 // Compare the Throttler example to the sync.WaitGroup example http://golang.org/pkg/sync/#example_WaitGroup
 //
-// See a fully functional example on the playground at http://bit.ly/throttler-v3
+// This package was forked and adapted from the original at
+// pkg:golang/github.com/nozzle/throttler@2ea982251481626167b7f83be1434b5c42540c1a
+// full commit history has been preserved.
+//
+// See a fully functional example of the original package on the playground at http://bit.ly/throttler-v3
 package throttler
 
 import (
@@ -39,7 +43,8 @@ import (
 	"sync/atomic"
 )
 
-// Throttler stores all the information about the number of workers, the active workers and error information
+// Throttler stores all the information about the number of workers, the active
+// workers and error information.
 type Throttler struct {
 	maxWorkers    int32
 	workerCount   int32
@@ -80,7 +85,7 @@ func NewBatchedThrottler(maxWorkers, batchingTotal, batchSize int) *Throttler {
 
 // SetMaxWorkers lets you change the total number of workers that can run concurrently. NOTE: If
 // all workers are currently running, this setting is not guaranteed to take effect until one of them
-// completes and Throttle() is called again
+// completes and Throttle() is called again.
 func (t *Throttler) SetMaxWorkers(maxWorkers int) {
 	if maxWorkers < 1 {
 		panic("maxWorkers has to be at least 1")
@@ -101,7 +106,7 @@ func (t *Throttler) Throttle() int {
 	atomic.AddInt32(&t.workerCount, 1)
 
 	// check to see if the current number of workers equals the max number of workers
-	// if they are equal, wait for one to finish before continuing
+	// if they are equal, wait for one to finish before continuing.
 	if atomic.LoadInt32(&t.workerCount) == atomic.LoadInt32(&t.maxWorkers) {
 		atomic.AddInt32(&t.jobsCompleted, 1)
 		atomic.AddInt32(&t.workerCount, -1)
@@ -109,7 +114,7 @@ func (t *Throttler) Throttle() int {
 	}
 
 	// check to see if all of the jobs have been started, and if so, wait until all
-	// jobs have been completed before continuing
+	// jobs have been completed before continuing.
 	if atomic.LoadInt32(&t.jobsStarted) == atomic.LoadInt32(&t.totalJobs) {
 		for atomic.LoadInt32(&t.jobsCompleted) < atomic.LoadInt32(&t.totalJobs) {
 			atomic.AddInt32(&t.jobsCompleted, 1)
@@ -122,7 +127,7 @@ func (t *Throttler) Throttle() int {
 
 // Done lets Throttler know that a job has been completed so that another worker
 // can be activated. If Done is called less times than totalJobs,
-// Throttle will block forever
+// Throttle will block forever.
 func (t *Throttler) Done(err error) {
 	if err != nil {
 		t.errsMutex.Lock()
@@ -133,7 +138,7 @@ func (t *Throttler) Done(err error) {
 	t.doneChan <- struct{}{}
 }
 
-// Err returns an error representative of all errors caught by throttler
+// Err returns an error representative of all errors caught by throttler.
 func (t *Throttler) Err() error {
 	t.errsMutex.Lock()
 	defer t.errsMutex.Unlock()
@@ -143,7 +148,7 @@ func (t *Throttler) Err() error {
 	return multiError(t.errs)
 }
 
-// Errs returns a slice of any errors that were received from calling Done()
+// Errs returns a slice of any errors that were received from calling Done().
 func (t *Throttler) Errs() []error {
 	t.errsMutex.Lock()
 	defer t.errsMutex.Unlock()
@@ -162,7 +167,7 @@ func (te multiError) Error() string {
 
 // BatchStartIndex returns the starting index for the next batch. The job count isn't modified
 // until th.Throttle() is called, so if you don't call Throttle before executing this
-// again, it will return the same index as before
+// again, it will return the same index as before.
 func (t *Throttler) BatchStartIndex() int {
 	return int(atomic.LoadInt32(&t.jobsStarted) * atomic.LoadInt32(&t.batchSize))
 }
@@ -179,7 +184,7 @@ func (t *Throttler) BatchEndIndex() int {
 	return int(end)
 }
 
-// TotalJobs returns the total number of jobs throttler is performing
+// TotalJobs returns the total number of jobs throttler is performing.
 func (t *Throttler) TotalJobs() int {
 	return int(atomic.LoadInt32(&t.totalJobs))
 }
