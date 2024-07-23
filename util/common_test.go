@@ -567,3 +567,50 @@ func TestCleanLogFile(t *testing.T) {
 	require.NotEqual(t, originalLog, string(resultingData))
 	require.Equal(t, cleanLog, string(resultingData))
 }
+
+func TestIsDir(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name     string
+		prepare  func(t *testing.T) string
+		expected bool
+	}{
+		{
+			name: "isdir",
+			prepare: func(t *testing.T) string {
+				t.Helper()
+				dir := t.TempDir()
+				return dir
+			},
+			expected: true,
+		},
+		{
+			name: "isfile",
+			prepare: func(t *testing.T) string {
+				t.Helper()
+				dir := t.TempDir()
+				path := filepath.Join(dir, "file.txt")
+				require.NoError(t, os.WriteFile(path, []byte("Yo!"), os.FileMode(0o644)))
+				return path
+			},
+			expected: false,
+		},
+		{
+			name: "nonexisting",
+			prepare: func(t *testing.T) string {
+				t.Helper()
+				dir := t.TempDir()
+				path := filepath.Join(dir, "not-there.txt")
+				return path
+			},
+			expected: false,
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			path := tc.prepare(t)
+			require.Equal(t, tc.expected, IsDir(path))
+		})
+	}
+}
