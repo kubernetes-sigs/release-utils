@@ -344,15 +344,15 @@ func TestAgentGroupGetRequest(t *testing.T) {
 }
 
 func TestAgentPostRequestGroup(t *testing.T) {
+	t.Parallel()
 	fake := &httpfakes.FakeAgentImplementation{}
-	fakeUrls := []string{"http://www/1", "http://www/2", "http://www/3", "http://www/4"}
-
-	// postData is one element shorter than urls to test permafail on nil post data
-	postData := [][]byte{[]byte("hey 1"), []byte("hey 2"), []byte("hey 3")}
+	errorURL := "fake:error"
+	httpErrorURL := "fake:httpError"
+	noErrorURL := "fake:ok"
 
 	fake.SendPostRequestCalls(func(_ *http.Client, s string, _ []byte, _ string) (*http.Response, error) {
 		switch s {
-		case fakeUrls[0]:
+		case noErrorURL:
 			return &http.Response{
 				Status:        "Fake OK",
 				StatusCode:    http.StatusOK,
@@ -361,7 +361,7 @@ func TestAgentPostRequestGroup(t *testing.T) {
 				Close:         true,
 				Request:       &http.Request{},
 			}, nil
-		case fakeUrls[1]:
+		case httpErrorURL:
 			return &http.Response{
 				Status:        "Fake not found",
 				StatusCode:    http.StatusNotFound,
@@ -369,47 +369,71 @@ func TestAgentPostRequestGroup(t *testing.T) {
 				ContentLength: 18,
 				Close:         true,
 				Request:       &http.Request{},
-			}, nil
-		case fakeUrls[2]:
+			}, fmt.Errorf("HTTP error %d for %s", http.StatusNotFound, s)
+		case errorURL:
 			return nil, errors.New("malformed url")
 		}
 		return nil, nil
 	})
 
 	for _, tc := range []struct {
-		name    string
-		workers int
+		name     string
+		workers  int
+		mustErr  bool
+		urls     []string
+		postData [][]byte
 	}{
-		{"no-parallelism", 1}, {"one-per-request", 3}, {"spare-workers", 5},
+		{"no-parallelism", 1, false, []string{noErrorURL, noErrorURL, noErrorURL}, make([][]byte, 3)},
+		{"one-per-request", 3, false, []string{noErrorURL, noErrorURL, noErrorURL}, make([][]byte, 3)},
+		{"spare-workers", 5, false, []string{noErrorURL, noErrorURL, noErrorURL}, make([][]byte, 3)},
+		{"uneven-postdata", 5, true, []string{noErrorURL, noErrorURL, noErrorURL}, make([][]byte, 2)},
+		{"uneven-postdata2", 5, true, []string{noErrorURL, noErrorURL, noErrorURL}, make([][]byte, 4)},
+		{"http-error", 5, true, []string{noErrorURL, httpErrorURL, noErrorURL}, make([][]byte, 3)},
+		{"software-error", 5, true, []string{noErrorURL, errorURL, noErrorURL}, make([][]byte, 3)},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			// No retries as the errors are synthetic
 			agent := NewTestAgent().WithRetries(0).WithFailOnHTTPError(false).WithMaxParallel(tc.workers)
 			agent.SetImplementation(fake)
 
 			//nolint: bodyclose
-			resps, errs := agent.PostRequestGroup(fakeUrls, postData)
-			defer func() {
-				for i := range resps {
-					if resps[i] != nil {
-						resps[i].Body.Close()
-					}
+			resps, errs := agent.PostRequestGroup(tc.urls, tc.postData)
+			closeHTTPResponseGroup(resps)
+
+			// If urls and postdata don't all errors should be errors
+			if len(tc.urls) != len(tc.postData) {
+				for i := range errs {
+					require.Error(t, errs[i])
 				}
-			}()
+				return
+			}
 
-			require.Len(t, resps, 4)
-			require.Len(t, errs, 4)
+			// Check for at least on error
+			if tc.mustErr {
+				require.Error(t, errors.Join(errs...))
+			} else {
+				require.NoError(t, errors.Join(errs...))
+			}
 
-			require.NoError(t, errs[0])
-			require.NoError(t, errs[1])
-			require.Error(t, errs[2], fmt.Sprintf("%+v", resps[2]))
-			require.Error(t, errs[3])
+			require.Len(t, resps, len(tc.urls))
+			require.Len(t, errs, len(tc.urls))
 
-			require.Equal(t, http.StatusOK, resps[0].StatusCode)
-			require.Equal(t, http.StatusNotFound, resps[1].StatusCode)
-			require.Nil(t, resps[2])
-			require.Nil(t, resps[3])
+			for i := range tc.urls {
+				switch tc.urls[i] {
+				case noErrorURL:
+					require.NoError(t, errs[i])
+					require.NotNil(t, resps[i])
+					require.Equal(t, http.StatusOK, resps[i].StatusCode)
+				case httpErrorURL:
+					require.Error(t, errs[i])
+					require.NotNil(t, resps[i])
+					require.Equal(t, http.StatusNotFound, resps[i].StatusCode)
+				case errorURL:
+					require.Error(t, errs[i])
+				}
+			}
 		})
 	}
 }
