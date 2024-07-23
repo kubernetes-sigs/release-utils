@@ -145,7 +145,7 @@ func (t *Throttler) Err() error {
 	if atomic.LoadInt32(&t.errorCount) == 0 {
 		return nil
 	}
-	return multiError(t.errs)
+	return multiErrors(t.errs)
 }
 
 // Errs returns a slice of any errors that were received from calling Done().
@@ -155,9 +155,9 @@ func (t *Throttler) Errs() []error {
 	return t.errs
 }
 
-type multiError []error
+type multiErrors []error
 
-func (te multiError) Error() string {
+func (te multiErrors) Error() string {
 	errString := te[0].Error()
 	if len(te) > 1 {
 		errString += fmt.Sprintf(" (and %d more errors)", len(te)-1)
