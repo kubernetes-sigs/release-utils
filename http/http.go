@@ -20,7 +20,11 @@ import (
 	"bytes"
 )
 
-// GetURLResponse returns the HTTP response for the provided URL if the request succeeds.
+// GetURLResponse performs a get request and returns the response contents as a
+// string if successful.
+//
+// Deprecated: Use http.Agent.Get() instead. This function will be removed in a
+// future version of this package.
 func GetURLResponse(url string, trim bool) (string, error) {
 	resp, err := NewAgent().Get(url)
 	if err != nil {

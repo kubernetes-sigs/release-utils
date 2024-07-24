@@ -18,13 +18,17 @@ package http
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"math"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
+
+	"sigs.k8s.io/release-utils/throttler"
 )
 
 const (
@@ -58,6 +62,7 @@ type agentOptions struct {
 	Timeout         time.Duration // Timeout when fetching URLs
 	MaxWaitTime     time.Duration // Max waiting time when backing off
 	PostContentType string        // Content type to send when posting data
+	MaxParallel     uint          // Maximum number of parallel requests when requesting groups
 }
 
 // String returns a string representation of the options.
@@ -74,6 +79,7 @@ var defaultAgentOptions = &agentOptions{
 	Timeout:         3 * time.Second,
 	MaxWaitTime:     60 * time.Second,
 	PostContentType: defaultPostContentType,
+	MaxParallel:     5,
 }
 
 // NewAgent return a new agent with default options.
@@ -104,6 +110,12 @@ func (a *Agent) WithRetries(retries uint) *Agent {
 // WithFailOnHTTPError determines if the agent fails on HTTP errors (HTTP status not in 200s).
 func (a *Agent) WithFailOnHTTPError(flag bool) *Agent {
 	a.options.FailOnHTTPError = flag
+	return a
+}
+
+// WithMaxParallel controls how many requests we do when fetching groups.
+func (a *Agent) WithMaxParallel(workers int) *Agent {
+	a.options.MaxParallel = uint(workers)
 	return a
 }
 
@@ -307,4 +319,208 @@ func (a *Agent) PostToWriter(w io.Writer, url string, postData []byte) error {
 		return fmt.Errorf("sending POST request: %w", err)
 	}
 	return a.readResponse(resp, w)
+}
+
+// GetRequestGroup behaves like agent.SendGetRequest() but takes a group of URLs
+// and performs the requests in parallel. The number of simultaneous requests is
+// controlled by options.MaxParallel.
+func (a *Agent) GetRequestGroup(urls []string) ([]*http.Response, []error) {
+	t := throttler.New(int(a.options.MaxParallel), len(urls))
+	ret := make([]*http.Response, len(urls))
+	errs := make([]error, len(urls))
+	m := sync.Mutex{}
+	for i := range urls {
+		i := i
+		go func(url string) {
+			//nolint: bodyclose // We don't close here as we're returning the response
+			resp, err := a.AgentImplementation.SendGetRequest(a.Client(), url)
+
+			m.Lock()
+			ret[i] = resp
+			errs[i] = err
+			m.Unlock()
+
+			t.Done(err)
+		}(urls[i])
+		t.Throttle()
+	}
+
+	return ret, errs
+}
+
+// PostRequestGroup behaves like agent.Post() but takes a group of URLs and performs the
+// requests in parallel. The number of simultaneous requests is controlled by
+// options.MaxParallel.
+//
+// The list of URLs and postData byte arrays are required to be of equal length.
+// If postData has less elements than the URL list, the function will exit early,
+// failing all requests.
+func (a *Agent) PostRequestGroup(urls []string, postData [][]byte) ([]*http.Response, []error) {
+	ret := make([]*http.Response, len(urls))
+	errs := make([]error, len(urls))
+	// URLs and postData arrays must be equal in length. If not exit now.
+	if len(postData) != len(urls) {
+		err := errors.New("unable to perform requests, same number URLs and POST payloads required")
+		for i := 0; i < len(urls); i++ {
+			errs[i] = err
+		}
+		return ret, errs
+	}
+
+	t := throttler.New(int(a.options.MaxParallel), len(urls))
+	m := sync.Mutex{}
+	for i := range urls {
+		i := i
+		go func(url string, pdata []byte) {
+			//nolint: bodyclose // We don't close here as we're returning the raw response
+			resp, err := a.AgentImplementation.SendPostRequest(
+				a.Client(), url, pdata, a.options.PostContentType,
+			)
+
+			m.Lock()
+			ret[i] = resp
+			errs[i] = err
+			m.Unlock()
+			t.Done(err)
+		}(urls[i], postData[i])
+		t.Throttle()
+	}
+
+	return ret, errs
+}
+
+// PostGroup behaves just as Post() but takes a group of URLs and performs
+// the requests in parallel. The number of simultaneous requests is controlled by
+// options.MaxParallel.
+//
+// The list of URLs and postData byte arrays are expected to be of equal length.
+// If postData has less elements than the url list, those urls without a corresponding
+// postData array will return an error.
+func (a *Agent) PostGroup(urls []string, postData [][]byte) ([][]byte, []error) {
+	//nolint: bodyclose // Next line closes them
+	resps, errs := a.PostRequestGroup(urls, postData)
+	defer closeHTTPResponseGroup(resps)
+
+	c := make([][]byte, len(urls))
+	for i, r := range resps {
+		if r != nil {
+			d, err := a.readResponseToByteArray(r)
+			if err != nil {
+				errs[i] = fmt.Errorf("reading group response #%d: %w", i, err)
+				continue
+			}
+			c[i] = d
+		}
+	}
+	return c, errs
+}
+
+// closeHTTPResponseGroup is an internal func that closes the response bodies.
+func closeHTTPResponseGroup(resps []*http.Response) {
+	for i := range resps {
+		if resps[i] == nil {
+			continue
+		}
+		resps[i].Body.Close()
+	}
+}
+
+// PostToWriterGroup behaves just as PostToWriter() but takes a group of URLs
+// and performs the requests in parallel. The number of simultaneous requests
+// is controlled by options.MaxParallel.
+//
+// The list of URLs and postData byte arrays are expected to be of equal length.
+// If postData has less elements than the url list, those urls without a corresponding
+// postData array will return an error.
+//
+// If the w writers slice contains a single writer, all the responses will be
+// written to the single writer. If the writers array contains more than one
+// io.Writer, each request will be written to its corresponding writer unless it
+// is missing, in that case the request will return an an error. The requests are
+// guaranteed to go into the writer in order.
+func (a *Agent) PostToWriterGroup(w []io.Writer, urls []string, postData [][]byte) []error {
+	//nolint: bodyclose // Next line closes them
+	resps, errs := a.PostRequestGroup(urls, postData)
+	defer closeHTTPResponseGroup(resps)
+
+	for i, r := range resps {
+		if r == nil {
+			continue
+		}
+
+		var err error
+		if len(w) == 1 {
+			err = a.readResponse(r, w[0])
+		} else {
+			if i >= len(w) {
+				err = fmt.Errorf("request %d has no writer defined", i)
+			} else {
+				err = a.readResponse(r, w[i])
+			}
+		}
+		if err != nil {
+			errs[i] = fmt.Errorf("writing group response #%d: %w", i, err)
+			continue
+		}
+	}
+	return errs
+}
+
+// GetGroup behaves just as Get() but takes a group of URLs and performs
+// the requests in parallel. The number of simultaneous requests is controlled by
+// options.MaxParallel.
+func (a *Agent) GetGroup(urls []string) ([][]byte, []error) {
+	//nolint: bodyclose // Next line closes them
+	resps, errs := a.GetRequestGroup(urls)
+	defer closeHTTPResponseGroup(resps)
+
+	c := make([][]byte, len(urls))
+	for i, r := range resps {
+		if r != nil {
+			d, err := a.readResponseToByteArray(r)
+			if err != nil {
+				errs[i] = fmt.Errorf("reading group response #%d: %w", i, err)
+				continue
+			}
+			c[i] = d
+		}
+	}
+	return c, errs
+}
+
+// GetToWriterGroup behaves just as GetToWriter() but takes a group of URLs
+// and performs the requests in parallel. The number of simultaneous requests
+// is controlled by options.MaxParallel.
+//
+// If the w writers slice contains a single writer, all the responses will be
+// written to the single writer. If the writers array contains more than one
+// io.Writer, each request will be written to its corresponding writer unless it
+// is missing in which case the request will return an an error. The requests are
+// guaranteed to go into the writer in order.
+func (a *Agent) GetToWriterGroup(w []io.Writer, urls []string) []error {
+	//nolint: bodyclose
+	resps, errs := a.GetRequestGroup(urls)
+	defer closeHTTPResponseGroup(resps)
+
+	for i, r := range resps {
+		if r == nil {
+			continue
+		}
+
+		var err error
+		if len(w) == 1 {
+			err = a.readResponse(r, w[0])
+		} else {
+			if i >= len(w) {
+				err = fmt.Errorf("request %d has no writer defined", i)
+			} else {
+				err = a.readResponse(r, w[i])
+			}
+		}
+		if err != nil {
+			errs[i] = fmt.Errorf("writing group response #%d: %w", i, err)
+			continue
+		}
+	}
+	return errs
 }
