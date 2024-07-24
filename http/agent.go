@@ -26,9 +26,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nozzle/throttler"
 	"github.com/sirupsen/logrus"
-
-	"sigs.k8s.io/release-utils/throttler"
 )
 
 const (
