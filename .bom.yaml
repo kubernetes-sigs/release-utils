@@ -1,0 +1,5 @@
+---
+license: Apache-2.0
+name: sigs.k8s.io/release-utils
+creator:
+  person: The Kubernetes Authors
