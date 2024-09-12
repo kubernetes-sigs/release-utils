@@ -98,7 +98,6 @@ linters:
     # - errorlint
     # - exhaustive
     # - exhaustruct
-    # - exportloopref
     # - forbidigo
     # - forcetypeassert
     # - funlen

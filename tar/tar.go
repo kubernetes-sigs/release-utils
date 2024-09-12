@@ -184,6 +184,7 @@ func Extract(tarFilePath, destinationPath string) error {
 				if err != nil {
 					return false, fmt.Errorf("create target file: %w", err)
 				}
+				//nolint:gosec // integer overflow highly unlikely
 				if err := outFile.Chmod(os.FileMode(header.Mode)); err != nil {
 					return false, fmt.Errorf("chmod target file: %w", err)
 				}

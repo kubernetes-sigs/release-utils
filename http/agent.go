@@ -114,6 +114,7 @@ func (a *Agent) WithFailOnHTTPError(flag bool) *Agent {
 
 // WithMaxParallel controls how many requests we do when fetching groups.
 func (a *Agent) WithMaxParallel(workers int) *Agent {
+	//nolint:gosec // integer overflow highly unlikely
 	a.options.MaxParallel = uint(workers)
 	return a
 }
@@ -139,11 +140,11 @@ func (a *Agent) Get(url string) (content []byte, err error) {
 // GetRequest sends a GET request to a URL and returns the request and response.
 func (a *Agent) GetRequest(url string) (response *http.Response, err error) {
 	logrus.Debugf("Sending GET request to %s", url)
-	try := 0
+	var try uint
 	for {
 		response, err = a.AgentImplementation.SendGetRequest(a.Client(), url)
 		try++
-		if err == nil || try >= int(a.options.Retries) {
+		if err == nil || try >= a.options.Retries {
 			return response, err
 		}
 		// Do exponential backoff...
@@ -154,7 +155,7 @@ func (a *Agent) GetRequest(url string) (response *http.Response, err error) {
 		}
 		logrus.Errorf(
 			"Error getting URL (will retry %d more times in %.0f secs): %s",
-			int(a.options.Retries)-try, waitTime, err.Error(),
+			a.options.Retries-try, waitTime, err.Error(),
 		)
 		time.Sleep(time.Duration(waitTime) * time.Second)
 	}
@@ -174,11 +175,11 @@ func (a *Agent) Post(url string, postData []byte) (content []byte, err error) {
 // PostRequest sends the postData in a POST request to a URL and returns the request object.
 func (a *Agent) PostRequest(url string, postData []byte) (response *http.Response, err error) {
 	logrus.Debugf("Sending POST request to %s", url)
-	try := 0
+	var try uint
 	for {
 		response, err = a.AgentImplementation.SendPostRequest(a.Client(), url, postData, a.options.PostContentType)
 		try++
-		if err == nil || try >= int(a.options.Retries) {
+		if err == nil || try >= a.options.Retries {
 			return response, err
 		}
 		// Do exponential backoff...
@@ -189,7 +190,7 @@ func (a *Agent) PostRequest(url string, postData []byte) (response *http.Respons
 		}
 		logrus.Errorf(
 			"Error getting URL (will retry %d more times in %.0f secs): %s",
-			int(a.options.Retries)-try, waitTime, err.Error(),
+			a.options.Retries-try, waitTime, err.Error(),
 		)
 		time.Sleep(time.Duration(waitTime) * time.Second)
 	}
@@ -209,11 +210,11 @@ func (a *Agent) Head(url string) (content []byte, err error) {
 // HeadRequest sends a HEAD request to a URL and returns the request and response.
 func (a *Agent) HeadRequest(url string) (response *http.Response, err error) {
 	logrus.Debugf("Sending HEAD request to %s", url)
-	try := 0
+	var try uint
 	for {
 		response, err = a.AgentImplementation.SendHeadRequest(a.Client(), url)
 		try++
-		if err == nil || try >= int(a.options.Retries) {
+		if err == nil || try >= a.options.Retries {
 			return response, err
 		}
 		// Do exponential backoff...
@@ -224,7 +225,7 @@ func (a *Agent) HeadRequest(url string) (response *http.Response, err error) {
 		}
 		logrus.Errorf(
 			"Error getting URL (will retry %d more times in %.0f secs): %s",
-			int(a.options.Retries)-try, waitTime, err.Error(),
+			a.options.Retries-try, waitTime, err.Error(),
 		)
 		time.Sleep(time.Duration(waitTime) * time.Second)
 	}
@@ -324,12 +325,12 @@ func (a *Agent) PostToWriter(w io.Writer, url string, postData []byte) error {
 // and performs the requests in parallel. The number of simultaneous requests is
 // controlled by options.MaxParallel.
 func (a *Agent) GetRequestGroup(urls []string) ([]*http.Response, []error) {
+	//nolint:gosec // integer overflow highly unlikely
 	t := throttler.New(int(a.options.MaxParallel), len(urls))
 	ret := make([]*http.Response, len(urls))
 	errs := make([]error, len(urls))
 	m := sync.Mutex{}
 	for i := range urls {
-		i := i
 		go func(url string) {
 			//nolint: bodyclose // We don't close here as we're returning the response
 			resp, err := a.AgentImplementation.SendGetRequest(a.Client(), url)
@@ -360,16 +361,16 @@ func (a *Agent) PostRequestGroup(urls []string, postData [][]byte) ([]*http.Resp
 	// URLs and postData arrays must be equal in length. If not exit now.
 	if len(postData) != len(urls) {
 		err := errors.New("unable to perform requests, same number URLs and POST payloads required")
-		for i := 0; i < len(urls); i++ {
+		for i := range urls {
 			errs[i] = err
 		}
 		return ret, errs
 	}
 
+	//nolint:gosec // integer overflow highly unlikely
 	t := throttler.New(int(a.options.MaxParallel), len(urls))
 	m := sync.Mutex{}
 	for i := range urls {
-		i := i
 		go func(url string, pdata []byte) {
 			//nolint: bodyclose // We don't close here as we're returning the raw response
 			resp, err := a.AgentImplementation.SendPostRequest(
