@@ -326,8 +326,8 @@ func TestCommandsFailure(t *testing.T) {
 }
 
 func TestEnv(t *testing.T) {
-	require.NoError(t, os.Setenv("ABC", "test")) // preserved
-	require.NoError(t, os.Setenv("FOO", "test")) // overwritten
+	t.Setenv("ABC", "test") // preserved
+	t.Setenv("FOO", "test") // overwritten
 	res, err := New("sh", "-c", "echo $TEST; echo $FOO; echo $ABC").
 		Env("TEST=123").
 		Env("FOO=bar").

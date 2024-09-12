@@ -144,7 +144,6 @@ func TestAgentGet(t *testing.T) {
 			},
 		},
 	} {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			fake := &httpfakes.FakeAgentImplementation{}
@@ -418,7 +417,6 @@ func TestAgentPostRequestGroup(t *testing.T) {
 		{"http-error", 5, true, []string{noErrorURL, httpErrorURL, noErrorURL}, make([][]byte, 3)},
 		{"software-error", 5, true, []string{noErrorURL, errorURL, noErrorURL}, make([][]byte, 3)},
 	} {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			// No retries as the errors are synthetic
