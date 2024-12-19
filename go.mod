@@ -5,7 +5,7 @@ go 1.23
 require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.0
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2
 	github.com/moby/term v0.5.0
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481
 	github.com/sirupsen/logrus v1.9.3
