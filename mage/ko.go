@@ -25,7 +25,7 @@ import (
 	"github.com/uwu-tools/magex/pkg/downloads"
 )
 
-const defaultKoVersion = "0.15.2"
+const defaultKoVersion = "0.17.1"
 
 // EnsureKO ensures that the ko binary exists.
 func EnsureKO(version string) error {

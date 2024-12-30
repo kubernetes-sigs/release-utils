@@ -27,7 +27,7 @@ import (
 
 const (
 	// zeitgeist.
-	defaultZeitgeistVersion = "v0.5.3"
+	defaultZeitgeistVersion = "v0.5.4"
 	zeitgeistCmd            = "zeitgeist"
 	zeitgeistModule         = "sigs.k8s.io/zeitgeist"
 	zeitgeistRemoteModule   = "sigs.k8s.io/zeitgeist/remote/zeitgeist"
