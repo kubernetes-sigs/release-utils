@@ -54,7 +54,7 @@ func Example() {
 
 	defer func() {
 		for i := range w {
-			w[i].(*os.File).Close()
+			w[i].(*os.File).Close() //nolint: errcheck
 		}
 	}()
 
