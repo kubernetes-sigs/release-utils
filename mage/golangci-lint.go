@@ -38,7 +38,7 @@ import (
 
 const (
 	// golangci-lint.
-	defaultGolangCILintVersion = "v1.62.2"
+	defaultGolangCILintVersion = "v1.63.4"
 	golangciCmd                = "golangci-lint"
 	golangciConfig             = ".golangci.yml"
 	golangciURLBase            = "https://raw.githubusercontent.com/golangci/golangci-lint"
