@@ -34,6 +34,7 @@ func EnsureKO(version string) error {
 	}
 
 	fmt.Printf("Checking if `ko` version %s is installed\n", version)
+
 	found, err := pkg.IsCommandAvailable("ko", "version", version)
 	if err != nil {
 		return err
@@ -41,16 +42,19 @@ func EnsureKO(version string) error {
 
 	if !found {
 		fmt.Println("`ko` not found")
+
 		return InstallKO(version)
 	}
 
 	fmt.Println("`ko` is installed!")
+
 	return nil
 }
 
 // Maybe we can  move this to release-utils.
 func InstallKO(version string) error {
 	fmt.Println("Will install `ko`")
+
 	target := "ko"
 	if runtime.GOOS == "windows" {
 		target = "ko.exe"

@@ -29,9 +29,7 @@ import (
 )
 
 func TestCompress(t *testing.T) {
-	baseTmpDir, err := os.MkdirTemp("", "compress-")
-	require.NoError(t, err)
-	defer os.RemoveAll(baseTmpDir)
+	baseTmpDir := t.TempDir()
 
 	for _, fileName := range []string{
 		"1.txt", "2.bin", "3.md",
@@ -73,20 +71,19 @@ func TestCompress(t *testing.T) {
 	require.FileExists(t, tarFilePath)
 
 	res := []string{"1.txt", "2.bin", "sub/4.txt", "sub/link"}
+
 	require.NoError(t, iterateTarball(
 		tarFilePath, func(_ *tar.Reader, header *tar.Header) (bool, error) {
 			require.Equal(t, res[0], header.Name)
 			res = res[1:]
+
 			return false, nil
 		}),
 	)
 }
 
 func TestCompressWithoutPreservingPath(t *testing.T) {
-	baseTmpDir, err := os.MkdirTemp("", "compress-")
-	require.NoError(t, err)
-	defer os.RemoveAll(baseTmpDir)
-
+	baseTmpDir := t.TempDir()
 	compressDir := filepath.Join(baseTmpDir, "to_compress")
 	require.NoError(t, os.MkdirAll(compressDir, os.FileMode(0o755)))
 
@@ -107,10 +104,12 @@ func TestCompressWithoutPreservingPath(t *testing.T) {
 	require.FileExists(t, tarFilePath)
 
 	res := []string{"1.txt", "2.bin", "3.md"}
+
 	require.NoError(t, iterateTarball(
 		tarFilePath, func(_ *tar.Reader, header *tar.Header) (bool, error) {
 			require.Equal(t, res[0], header.Name)
 			res = res[1:]
+
 			return false, nil
 		}),
 	)
@@ -138,17 +137,14 @@ func TestExtract(t *testing.T) {
 		0xeb, 0x16, 0x00, 0x00, 0xff, 0xff, 0xe9, 0xde, 0xbe, 0xdf, 0x00, 0x12,
 		0x00, 0x00,
 	}
-	file, err := os.CreateTemp("", "tarball")
+	file, err := os.CreateTemp(t.TempDir(), "tarball")
 	require.NoError(t, err)
+
 	defer os.Remove(file.Name())
 	_, err = file.Write(tarball)
 	require.NoError(t, err)
 
-	baseTmpDir, err := os.MkdirTemp("", "extract-")
-	require.NoError(t, err)
-	require.NoError(t, os.RemoveAll(baseTmpDir))
-	defer os.RemoveAll(baseTmpDir)
-
+	baseTmpDir := t.TempDir()
 	require.NoError(t, Extract(file.Name(), baseTmpDir))
 	res := []string{
 		filepath.Base(baseTmpDir),
@@ -158,28 +154,31 @@ func TestExtract(t *testing.T) {
 		"4.txt",
 		"link",
 	}
+
 	require.NoError(t, filepath.Walk(
 		baseTmpDir,
 		func(_ string, fileInfo os.FileInfo, _ error) error {
 			require.Equal(t, res[0], fileInfo.Name())
+
 			if res[0] == "link" {
 				require.Equal(t, os.ModeSymlink, fileInfo.Mode()&os.ModeSymlink)
 			}
+
 			res = res[1:]
+
 			return nil
 		},
 	))
 }
 
 func TestReadFileFromGzippedTar(t *testing.T) {
-	baseTmpDir, err := os.MkdirTemp("", "tar-read-file-")
-	require.NoError(t, err)
-	defer os.RemoveAll(baseTmpDir)
+	baseTmpDir := t.TempDir()
 
 	const (
 		testFilePath     = "test.txt"
 		testFileContents = "test-file-contents"
 	)
+
 	testTarPath := filepath.Join(baseTmpDir, "test.tar.gz")
 
 	require.NoError(t, os.WriteFile(
@@ -193,10 +192,12 @@ func TestReadFileFromGzippedTar(t *testing.T) {
 		tarPath  string
 		filePath string
 	}
+
 	type want struct {
 		fileContents string
 		shouldErr    bool
 	}
+
 	cases := map[string]struct {
 		args args
 		want want

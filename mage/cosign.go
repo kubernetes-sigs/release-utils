@@ -34,6 +34,7 @@ func EnsureCosign(version string) error {
 	}
 
 	log.Printf("Checking if `cosign` version %s is installed\n", version)
+
 	found, err := pkg.IsCommandAvailable("cosign", "version", version)
 	if err != nil {
 		return err
@@ -41,16 +42,19 @@ func EnsureCosign(version string) error {
 
 	if !found {
 		fmt.Println("`cosign` not found")
+
 		return InstallCosign(version)
 	}
 
 	fmt.Println("`cosign` is installed!")
+
 	return nil
 }
 
 // InstallCosign installs the required cosign version.
 func InstallCosign(version string) error {
 	fmt.Println("Will install `cosign`")
+
 	target := "cosign"
 	if runtime.GOOS == "windows" {
 		target = "cosign.exe"

@@ -97,18 +97,21 @@ func (a *Agent) SetImplementation(impl AgentImplementation) {
 // WithTimeout sets the agent timeout.
 func (a *Agent) WithTimeout(timeout time.Duration) *Agent {
 	a.options.Timeout = timeout
+
 	return a
 }
 
 // WithRetries sets the number of times we'll attempt to fetch the URL.
 func (a *Agent) WithRetries(retries uint) *Agent {
 	a.options.Retries = retries
+
 	return a
 }
 
 // WithFailOnHTTPError determines if the agent fails on HTTP errors (HTTP status not in 200s).
 func (a *Agent) WithFailOnHTTPError(flag bool) *Agent {
 	a.options.FailOnHTTPError = flag
+
 	return a
 }
 
@@ -116,6 +119,7 @@ func (a *Agent) WithFailOnHTTPError(flag bool) *Agent {
 func (a *Agent) WithMaxParallel(workers int) *Agent {
 	//nolint:gosec // integer overflow highly unlikely
 	a.options.MaxParallel = uint(workers)
+
 	return a
 }
 
@@ -126,7 +130,7 @@ func (a *Agent) Client() *http.Client {
 	}
 }
 
-// Get returns the body a a GET request.
+// Get returns the body a GET request.
 func (a *Agent) Get(url string) (content []byte, err error) {
 	request, err := a.GetRequest(url)
 	if err != nil {
@@ -140,10 +144,13 @@ func (a *Agent) Get(url string) (content []byte, err error) {
 // GetRequest sends a GET request to a URL and returns the request and response.
 func (a *Agent) GetRequest(url string) (response *http.Response, err error) {
 	logrus.Debugf("Sending GET request to %s", url)
+
 	var try uint
+
 	for {
 		response, err = a.AgentImplementation.SendGetRequest(a.Client(), url)
 		try++
+
 		if err == nil || try >= a.options.Retries {
 			return response, err
 		}
@@ -153,6 +160,7 @@ func (a *Agent) GetRequest(url string) (response *http.Response, err error) {
 		if waitTime > 60 {
 			waitTime = a.options.MaxWaitTime.Seconds()
 		}
+
 		logrus.Errorf(
 			"Error getting URL (will retry %d more times in %.0f secs): %s",
 			a.options.Retries-try, waitTime, err.Error(),
@@ -175,10 +183,13 @@ func (a *Agent) Post(url string, postData []byte) (content []byte, err error) {
 // PostRequest sends the postData in a POST request to a URL and returns the request object.
 func (a *Agent) PostRequest(url string, postData []byte) (response *http.Response, err error) {
 	logrus.Debugf("Sending POST request to %s", url)
+
 	var try uint
+
 	for {
 		response, err = a.AgentImplementation.SendPostRequest(a.Client(), url, postData, a.options.PostContentType)
 		try++
+
 		if err == nil || try >= a.options.Retries {
 			return response, err
 		}
@@ -188,6 +199,7 @@ func (a *Agent) PostRequest(url string, postData []byte) (response *http.Respons
 		if waitTime > 60 {
 			waitTime = a.options.MaxWaitTime.Seconds()
 		}
+
 		logrus.Errorf(
 			"Error getting URL (will retry %d more times in %.0f secs): %s",
 			a.options.Retries-try, waitTime, err.Error(),
@@ -210,10 +222,13 @@ func (a *Agent) Head(url string) (content []byte, err error) {
 // HeadRequest sends a HEAD request to a URL and returns the request and response.
 func (a *Agent) HeadRequest(url string) (response *http.Response, err error) {
 	logrus.Debugf("Sending HEAD request to %s", url)
+
 	var try uint
+
 	for {
 		response, err = a.AgentImplementation.SendHeadRequest(a.Client(), url)
 		try++
+
 		if err == nil || try >= a.options.Retries {
 			return response, err
 		}
@@ -223,6 +238,7 @@ func (a *Agent) HeadRequest(url string) (response *http.Response, err error) {
 		if waitTime > 60 {
 			waitTime = a.options.MaxWaitTime.Seconds()
 		}
+
 		logrus.Errorf(
 			"Error getting URL (will retry %d more times in %.0f secs): %s",
 			a.options.Retries-try, waitTime, err.Error(),
@@ -238,10 +254,12 @@ func (impl *defaultAgentImplementation) SendPostRequest(
 	if contentType == "" {
 		contentType = defaultPostContentType
 	}
+
 	response, err = client.Post(url, contentType, bytes.NewBuffer(postData))
 	if err != nil {
 		return response, fmt.Errorf("posting data to %s: %w", url, err)
 	}
+
 	return response, nil
 }
 
@@ -275,6 +293,7 @@ func (a *Agent) readResponseToByteArray(response *http.Response) ([]byte, error)
 	if err := a.readResponse(response, &b); err != nil {
 		return nil, fmt.Errorf("reading array buffer: %w", err)
 	}
+
 	return b.Bytes(), nil
 }
 
@@ -286,6 +305,7 @@ func (a *Agent) readResponseToByteArray(response *http.Response) ([]byte, error)
 func (a *Agent) readResponse(response *http.Response, w io.Writer) (err error) {
 	// Read the response body
 	defer response.Body.Close()
+
 	if _, err := io.Copy(w, response.Body); err != nil {
 		return fmt.Errorf("reading response: %w", err)
 	}
@@ -297,8 +317,10 @@ func (a *Agent) readResponse(response *http.Response, w io.Writer) (err error) {
 				"HTTP error %s for %s", response.Status, response.Request.URL,
 			)
 		}
+
 		logrus.Warnf("Got HTTP error but FailOnHTTPError not set: %s", response.Status)
 	}
+
 	return err
 }
 
@@ -318,6 +340,7 @@ func (a *Agent) PostToWriter(w io.Writer, url string, postData []byte) error {
 	if err != nil {
 		return fmt.Errorf("sending POST request: %w", err)
 	}
+
 	return a.readResponse(resp, w)
 }
 
@@ -330,6 +353,7 @@ func (a *Agent) GetRequestGroup(urls []string) ([]*http.Response, []error) {
 	ret := make([]*http.Response, len(urls))
 	errs := make([]error, len(urls))
 	m := sync.Mutex{}
+
 	for i := range urls {
 		go func(url string) {
 			//nolint: bodyclose // We don't close here as we're returning the response
@@ -364,12 +388,14 @@ func (a *Agent) PostRequestGroup(urls []string, postData [][]byte) ([]*http.Resp
 		for i := range urls {
 			errs[i] = err
 		}
+
 		return ret, errs
 	}
 
 	//nolint:gosec // integer overflow highly unlikely
 	t := throttler.New(int(a.options.MaxParallel), len(urls))
 	m := sync.Mutex{}
+
 	for i := range urls {
 		go func(url string, pdata []byte) {
 			//nolint: bodyclose // We don't close here as we're returning the raw response
@@ -402,16 +428,20 @@ func (a *Agent) PostGroup(urls []string, postData [][]byte) ([][]byte, []error) 
 	defer closeHTTPResponseGroup(resps)
 
 	c := make([][]byte, len(urls))
+
 	for i, r := range resps {
 		if r != nil {
 			d, err := a.readResponseToByteArray(r)
 			if err != nil {
 				errs[i] = fmt.Errorf("reading group response #%d: %w", i, err)
+
 				continue
 			}
+
 			c[i] = d
 		}
 	}
+
 	return c, errs
 }
 
@@ -421,6 +451,7 @@ func closeHTTPResponseGroup(resps []*http.Response) {
 		if resps[i] == nil {
 			continue
 		}
+
 		resps[i].Body.Close()
 	}
 }
@@ -436,7 +467,7 @@ func closeHTTPResponseGroup(resps []*http.Response) {
 // If the w writers slice contains a single writer, all the responses will be
 // written to the single writer. If the writers array contains more than one
 // io.Writer, each request will be written to its corresponding writer unless it
-// is missing, in that case the request will return an an error. The requests are
+// is missing, in that case the request will return an error. The requests are
 // guaranteed to go into the writer in order.
 func (a *Agent) PostToWriterGroup(w []io.Writer, urls []string, postData [][]byte) []error {
 	//nolint: bodyclose // Next line closes them
@@ -458,11 +489,14 @@ func (a *Agent) PostToWriterGroup(w []io.Writer, urls []string, postData [][]byt
 				err = a.readResponse(r, w[i])
 			}
 		}
+
 		if err != nil {
 			errs[i] = fmt.Errorf("writing group response #%d: %w", i, err)
+
 			continue
 		}
 	}
+
 	return errs
 }
 
@@ -475,16 +509,20 @@ func (a *Agent) GetGroup(urls []string) ([][]byte, []error) {
 	defer closeHTTPResponseGroup(resps)
 
 	c := make([][]byte, len(urls))
+
 	for i, r := range resps {
 		if r != nil {
 			d, err := a.readResponseToByteArray(r)
 			if err != nil {
 				errs[i] = fmt.Errorf("reading group response #%d: %w", i, err)
+
 				continue
 			}
+
 			c[i] = d
 		}
 	}
+
 	return c, errs
 }
 
@@ -495,7 +533,7 @@ func (a *Agent) GetGroup(urls []string) ([][]byte, []error) {
 // If the w writers slice contains a single writer, all the responses will be
 // written to the single writer. If the writers array contains more than one
 // io.Writer, each request will be written to its corresponding writer unless it
-// is missing in which case the request will return an an error. The requests are
+// is missing in which case the request will return an error. The requests are
 // guaranteed to go into the writer in order.
 func (a *Agent) GetToWriterGroup(w []io.Writer, urls []string) []error {
 	//nolint: bodyclose
@@ -517,10 +555,13 @@ func (a *Agent) GetToWriterGroup(w []io.Writer, urls []string) []error {
 				err = a.readResponse(r, w[i])
 			}
 		}
+
 		if err != nil {
 			errs[i] = fmt.Errorf("writing group response #%d: %w", i, err)
+
 			continue
 		}
 	}
+
 	return errs
 }

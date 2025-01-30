@@ -56,6 +56,7 @@ func ForFile(filename string, hasher hash.Hash) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("open file %s: %w", filename, err)
 	}
+
 	defer func() {
 		if err := f.Close(); err != nil {
 			logrus.Warnf("Unable to close file %q: %v", filename, err)
@@ -63,6 +64,7 @@ func ForFile(filename string, hasher hash.Hash) (string, error) {
 	}()
 
 	hasher.Reset()
+
 	if _, err := io.Copy(hasher, f); err != nil {
 		return "", fmt.Errorf("hash file %s: %w", filename, err)
 	}

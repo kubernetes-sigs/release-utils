@@ -54,6 +54,7 @@ func TestGetURLResponseSuccess(t *testing.T) {
 func TestGetURLResponseSuccessTrimmed(t *testing.T) {
 	// Given
 	const expected = "     some test     "
+
 	server := httptest.NewServer(http.HandlerFunc(
 		func(w http.ResponseWriter, _ *http.Request) {
 			_, err := io.WriteString(w, expected)
@@ -89,12 +90,15 @@ func TestGetURLResponseFailedStatus(t *testing.T) {
 func NewTestAgent() *khttp.Agent {
 	agent := khttp.NewAgent()
 	agent.SetImplementation(&httpfakes.FakeAgentImplementation{})
+
 	return agent
 }
 
 func TestAgentPost(t *testing.T) {
 	t.Parallel()
+
 	agent := NewTestAgent().WithRetries(0)
+
 	resp := getTestResponse()
 	defer resp.Body.Close()
 
@@ -116,6 +120,7 @@ func TestAgentPost(t *testing.T) {
 
 func TestAgentGet(t *testing.T) {
 	t.Parallel()
+
 	agent := NewTestAgent().WithRetries(0)
 
 	for _, tc := range []struct {
@@ -146,14 +151,18 @@ func TestAgentGet(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			fake := &httpfakes.FakeAgentImplementation{}
 			tc.prepare(fake)
 			agent.SetImplementation(fake)
+
 			b, err := agent.Get("http://www.example.com/")
 			if tc.mustErr {
 				require.Error(t, err)
+
 				return
 			}
+
 			require.NoError(t, err)
 			require.Equal(t, tc.expected, b)
 		})
@@ -162,6 +171,7 @@ func TestAgentGet(t *testing.T) {
 
 func TestAgentGetToWriter(t *testing.T) {
 	agent := NewTestAgent()
+
 	for _, tc := range []struct {
 		n       string
 		prepare func(*httpfakes.FakeAgentImplementation, *http.Response)
@@ -184,17 +194,22 @@ func TestAgentGetToWriter(t *testing.T) {
 		t.Run(tc.n, func(t *testing.T) {
 			// First simulate a successful request
 			fake := &httpfakes.FakeAgentImplementation{}
+
 			resp := getTestResponse()
 			defer resp.Body.Close()
 			tc.prepare(fake, resp)
+
 			var buf bytes.Buffer
 
 			agent.SetImplementation(fake)
+
 			err := agent.GetToWriter(&buf, "http://www.example.com/")
 			if tc.mustErr {
 				require.Error(t, err)
+
 				return
 			}
+
 			require.NoError(t, err)
 			require.Equal(t, buf.Bytes(), []byte("hello sig-release!"))
 		})
@@ -203,6 +218,7 @@ func TestAgentGetToWriter(t *testing.T) {
 
 func TestAgentHead(t *testing.T) {
 	t.Parallel()
+
 	agent := NewTestAgent().WithRetries(0)
 
 	resp := getTestResponse()
@@ -259,16 +275,22 @@ func TestAgentPostToWriter(t *testing.T) {
 			agent := NewTestAgent()
 			// First simulate a successful request
 			fake := &httpfakes.FakeAgentImplementation{}
+
 			resp := getTestResponse()
 			defer resp.Body.Close()
 			tc.prepare(fake, resp)
+
 			var buf bytes.Buffer
+
 			agent.SetImplementation(fake)
+
 			err := agent.PostToWriter(&buf, "http://www.example.com/", []byte{})
 			if tc.mustErr {
 				require.Error(t, err)
+
 				return
 			}
+
 			require.NoError(t, err)
 			require.Equal(t, buf.Bytes(), []byte("hello sig-release!"))
 		})
@@ -278,6 +300,7 @@ func TestAgentPostToWriter(t *testing.T) {
 func TestAgentOptions(t *testing.T) {
 	agent := NewTestAgent()
 	fake := &httpfakes.FakeAgentImplementation{}
+
 	resp := &http.Response{
 		Status:        "Fake not found",
 		StatusCode:    http.StatusNotFound,
@@ -307,6 +330,7 @@ func closeHTTPResponseGroup(resps []*http.Response) {
 		if resps[i] == nil {
 			continue
 		}
+
 		resps[i].Body.Close()
 	}
 }
@@ -314,6 +338,7 @@ func closeHTTPResponseGroup(resps []*http.Response) {
 func TestAgentGroupGetRequest(t *testing.T) {
 	fake := &httpfakes.FakeAgentImplementation{}
 	fakeUrls := []string{"http://www/1", "http://www/2", "http://www/3"}
+
 	fake.SendGetRequestCalls(func(_ *http.Client, s string) (*http.Response, error) {
 		switch s {
 		case fakeUrls[0]:
@@ -337,6 +362,7 @@ func TestAgentGroupGetRequest(t *testing.T) {
 		case fakeUrls[2]:
 			return nil, errors.New("malformed url")
 		}
+
 		return nil, nil
 	})
 
@@ -371,6 +397,7 @@ func TestAgentGroupGetRequest(t *testing.T) {
 
 func TestAgentPostRequestGroup(t *testing.T) {
 	t.Parallel()
+
 	fake := &httpfakes.FakeAgentImplementation{}
 	errorURL := "fake:error"
 	httpErrorURL := "fake:httpError"
@@ -399,6 +426,7 @@ func TestAgentPostRequestGroup(t *testing.T) {
 		case errorURL:
 			return nil, errors.New("malformed url")
 		}
+
 		return nil, nil
 	})
 
@@ -432,6 +460,7 @@ func TestAgentPostRequestGroup(t *testing.T) {
 				for i := range errs {
 					require.Error(t, errs[i])
 				}
+
 				return
 			}
 

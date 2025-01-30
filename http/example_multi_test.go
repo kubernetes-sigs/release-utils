@@ -49,12 +49,13 @@ func Example() {
 		if err != nil {
 			logrus.Fatal("error opening file")
 		}
+
 		w = append(w, f)
 	}
 
 	defer func() {
 		for i := range w {
-			w[i].(*os.File).Close() //nolint: errcheck
+			w[i].(*os.File).Close()
 		}
 	}()
 

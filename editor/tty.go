@@ -56,17 +56,20 @@ func (t TTY) Safe(fn func() error) error {
 			isTerminal = term.IsTerminal(inFd)
 		}
 	}
+
 	if !isTerminal {
 		return fn()
 	}
 
 	var state *term.State
+
 	var err error
 	if t.Raw {
 		state, err = term.MakeRaw(inFd)
 	} else {
 		state, err = term.SaveState(inFd)
 	}
+
 	if err != nil {
 		return err
 	}
@@ -76,5 +79,6 @@ func (t TTY) Safe(fn func() error) error {
 			logrus.Errorf("Error resetting terminal: %v", err)
 		}
 	}()
+
 	return fn()
 }

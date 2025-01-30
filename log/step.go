@@ -42,6 +42,7 @@ func NewStepLogger(steps uint) *StepLogger {
 // field.
 func (l *StepLogger) WithStep() *logrus.Entry {
 	l.currentStep++
+
 	return l.WithField(
 		"step",
 		fmt.Sprintf("%d/%d", l.currentStep, l.steps),

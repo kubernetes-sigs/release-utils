@@ -38,13 +38,17 @@ func SetupGlobalLogger(level string) error {
 	if err != nil {
 		return fmt.Errorf("setting log level to %s: %w", level, err)
 	}
+
 	logrus.SetLevel(lvl)
+
 	if lvl >= logrus.DebugLevel {
 		logrus.Debug("Setting commands globally into verbose mode")
 		command.SetGlobalVerbose(true)
 	}
+
 	logrus.AddHook(NewFilenameHook())
 	logrus.Debugf("Using log level %q", lvl)
+
 	return nil
 }
 
@@ -67,5 +71,6 @@ func LevelNames() string {
 	for _, level := range logrus.AllLevels {
 		levels = append(levels, fmt.Sprintf("'%s'", level.String()))
 	}
+
 	return strings.Join(levels, ", ")
 }

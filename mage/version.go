@@ -30,6 +30,7 @@ func getVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	if version != "" {
 		return version, nil
 	}
@@ -59,11 +60,13 @@ func getBuildDateTime() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	if result != "" {
 		parsedInt, err := strconv.ParseInt(result, 10, 64)
 		if err != nil {
 			return "", fmt.Errorf("parse source date epoch to int: %w", err)
 		}
+
 		return time.Unix(parsedInt, 0).UTC().Format(time.RFC3339), nil
 	}
 
@@ -73,14 +76,17 @@ func getBuildDateTime() (string, error) {
 // GenerateLDFlags returns the string to use in the `-ldflags` flag.
 func GenerateLDFlags() (string, error) {
 	pkg := "sigs.k8s.io/release-utils/version"
+
 	version, err := getVersion()
 	if err != nil {
 		return "", err
 	}
+
 	commit, err := getCommit()
 	if err != nil {
 		return "", err
 	}
+
 	buildTime, err := getBuildDateTime()
 	if err != nil {
 		return "", err
