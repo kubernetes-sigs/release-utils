@@ -161,6 +161,7 @@ func testGo(verbose bool, tags string, pkgs ...string) error {
 	}
 
 	pkgArgs := []string{}
+
 	if len(pkgs) > 0 {
 		for _, p := range pkgs {
 			pkgArg := fmt.Sprintf("./%s/...", p)
@@ -172,9 +173,11 @@ func testGo(verbose bool, tags string, pkgs ...string) error {
 
 	cmdArgs := []string{"test"}
 	cmdArgs = append(cmdArgs, verboseFlag)
+
 	if tags != "" {
 		cmdArgs = append(cmdArgs, "-tags", tags)
 	}
+
 	cmdArgs = append(cmdArgs, pkgArgs...)
 
 	if err := shx.RunV(

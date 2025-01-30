@@ -66,8 +66,7 @@ func TestPackagesAvailableFailure(t *testing.T) {
 }
 
 func TestMoreRecent(t *testing.T) {
-	baseTmpDir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
+	baseTmpDir := t.TempDir()
 
 	// Create test files.
 	testFileOne := filepath.Join(baseTmpDir, "testone.txt")
@@ -88,16 +87,16 @@ func TestMoreRecent(t *testing.T) {
 
 	notFile := filepath.Join(baseTmpDir, "noexist.txt")
 
-	defer cleanupTmp(t, baseTmpDir)
-
 	type args struct {
 		a string
 		b string
 	}
+
 	type want struct {
 		r   bool
 		err error
 	}
+
 	cases := map[string]struct {
 		args args
 		want want
@@ -164,10 +163,8 @@ func TestMoreRecent(t *testing.T) {
 }
 
 func TestCopyFile(t *testing.T) {
-	srcDir, err := os.MkdirTemp("", "src")
-	require.NoError(t, err)
-	dstDir, err := os.MkdirTemp("", "dst")
-	require.NoError(t, err)
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
 
 	// Create test file.
 	srcFileOnePath := filepath.Join(srcDir, "testone.txt")
@@ -179,14 +176,12 @@ func TestCopyFile(t *testing.T) {
 
 	dstFileOnePath := filepath.Join(dstDir, "testone.txt")
 
-	defer cleanupTmp(t, srcDir)
-	defer cleanupTmp(t, dstDir)
-
 	type args struct {
 		src      string
 		dst      string
 		required bool
 	}
+
 	cases := map[string]struct {
 		args        args
 		shouldError bool
@@ -225,6 +220,7 @@ func TestCopyFile(t *testing.T) {
 			} else {
 				require.NoError(t, copyErr)
 			}
+
 			if copyErr == nil {
 				_, err := os.Stat(tc.args.dst)
 				if err != nil && tc.args.required {
@@ -236,10 +232,8 @@ func TestCopyFile(t *testing.T) {
 }
 
 func TestCopyDirContentLocal(t *testing.T) {
-	srcDir, err := os.MkdirTemp("", "src")
-	require.NoError(t, err)
-	dstDir, err := os.MkdirTemp("", "dst")
-	require.NoError(t, err)
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
 
 	// Create test file.
 	srcFileOnePath := filepath.Join(srcDir, "testone.txt")
@@ -256,16 +250,15 @@ func TestCopyDirContentLocal(t *testing.T) {
 		os.FileMode(0o644),
 	))
 
-	defer cleanupTmp(t, srcDir)
-	defer cleanupTmp(t, dstDir)
-
 	type args struct {
 		src string
 		dst string
 	}
+
 	type want struct {
 		err error
 	}
+
 	cases := map[string]struct {
 		args args
 		want want
@@ -299,8 +292,7 @@ func TestCopyDirContentLocal(t *testing.T) {
 }
 
 func TestRemoveAndReplaceDir(t *testing.T) {
-	dir, err := os.MkdirTemp("", "rm")
-	require.NoError(t, err)
+	dir := t.TempDir()
 
 	// Create test file.
 	fileOnePath := filepath.Join(dir, "testone.txt")
@@ -317,14 +309,14 @@ func TestRemoveAndReplaceDir(t *testing.T) {
 		os.FileMode(0o644),
 	))
 
-	defer cleanupTmp(t, dir)
-
 	type args struct {
 		dir string
 	}
+
 	type want struct {
 		err error
 	}
+
 	cases := map[string]struct {
 		args args
 		want want
@@ -356,8 +348,7 @@ func TestRemoveAndReplaceDir(t *testing.T) {
 }
 
 func TestExist(t *testing.T) {
-	dir, err := os.MkdirTemp("", "rm")
-	require.NoError(t, err)
+	dir := t.TempDir()
 
 	// Create test file.
 	fileOnePath := filepath.Join(dir, "testone.txt")
@@ -367,14 +358,14 @@ func TestExist(t *testing.T) {
 		os.FileMode(0o644),
 	))
 
-	defer cleanupTmp(t, dir)
-
 	type args struct {
 		dir string
 	}
+
 	type want struct {
 		exist bool
 	}
+
 	cases := map[string]struct {
 		args args
 		want want
@@ -419,10 +410,6 @@ func TestExist(t *testing.T) {
 			require.Equal(t, tc.want.exist, exist)
 		})
 	}
-}
-
-func cleanupTmp(t *testing.T, dir string) {
-	require.NoError(t, os.RemoveAll(dir))
 }
 
 func TestTagStringToSemver(t *testing.T) {
@@ -549,8 +536,9 @@ func TestCleanLogFile(t *testing.T) {
 	// And expected output
 	cleanLog := line1 + line2 + sanitizedTokenLine + line3 + line4 + line5 + "\n"
 
-	logfile, err := os.CreateTemp("", "clean-log-test-")
+	logfile, err := os.CreateTemp(t.TempDir(), "clean-log-test-")
 	require.NoError(t, err, "creating test logfile")
+
 	defer os.Remove(logfile.Name())
 	err = os.WriteFile(logfile.Name(), []byte(originalLog), os.FileMode(0o644))
 	require.NoError(t, err, "writing test file")
@@ -570,6 +558,7 @@ func TestCleanLogFile(t *testing.T) {
 
 func TestIsDir(t *testing.T) {
 	t.Parallel()
+
 	for _, tc := range []struct {
 		name     string
 		prepare  func(t *testing.T) string
@@ -580,6 +569,7 @@ func TestIsDir(t *testing.T) {
 			prepare: func(t *testing.T) string {
 				t.Helper()
 				dir := t.TempDir()
+
 				return dir
 			},
 			expected: true,
@@ -591,6 +581,7 @@ func TestIsDir(t *testing.T) {
 				dir := t.TempDir()
 				path := filepath.Join(dir, "file.txt")
 				require.NoError(t, os.WriteFile(path, []byte("Yo!"), os.FileMode(0o644)))
+
 				return path
 			},
 			expected: false,
@@ -601,6 +592,7 @@ func TestIsDir(t *testing.T) {
 				t.Helper()
 				dir := t.TempDir()
 				path := filepath.Join(dir, "not-there.txt")
+
 				return path
 			},
 			expected: false,

@@ -208,8 +208,9 @@ func TestFailureRunSilentSuccessOutput(t *testing.T) {
 }
 
 func TestSuccessLogWriter(t *testing.T) {
-	f, err := os.CreateTemp("", "log")
+	f, err := os.CreateTemp(t.TempDir(), "log")
 	require.NoError(t, err)
+
 	defer func() { require.NoError(t, os.Remove(f.Name())) }()
 
 	res, err := New("echo", "Hello World").AddWriter(f).RunSuccessOutput()
@@ -221,9 +222,11 @@ func TestSuccessLogWriter(t *testing.T) {
 }
 
 func TestSuccessLogWriterMultiple(t *testing.T) {
-	f, err := os.CreateTemp("", "log")
+	f, err := os.CreateTemp(t.TempDir(), "log")
 	require.NoError(t, err)
+
 	defer func() { require.NoError(t, os.Remove(f.Name())) }()
+
 	b := &bytes.Buffer{}
 
 	res, err := New("echo", "Hello World").
@@ -239,8 +242,9 @@ func TestSuccessLogWriterMultiple(t *testing.T) {
 }
 
 func TestSuccessLogWriterSilent(t *testing.T) {
-	f, err := os.CreateTemp("", "log")
+	f, err := os.CreateTemp(t.TempDir(), "log")
 	require.NoError(t, err)
+
 	defer func() { require.NoError(t, os.Remove(f.Name())) }()
 
 	err = New("echo", "Hello World").AddWriter(f).RunSilentSuccess()
@@ -252,8 +256,9 @@ func TestSuccessLogWriterSilent(t *testing.T) {
 }
 
 func TestSuccessLogWriterStdErr(t *testing.T) {
-	f, err := os.CreateTemp("", "log")
+	f, err := os.CreateTemp(t.TempDir(), "log")
 	require.NoError(t, err)
+
 	defer func() { require.NoError(t, os.Remove(f.Name())) }()
 
 	res, err := New("bash", "-c", ">&2 echo error").
@@ -266,8 +271,9 @@ func TestSuccessLogWriterStdErr(t *testing.T) {
 }
 
 func TestSuccessLogWriterStdErrAndStdOut(t *testing.T) {
-	f, err := os.CreateTemp("", "log")
+	f, err := os.CreateTemp(t.TempDir(), "log")
 	require.NoError(t, err)
+
 	defer func() { require.NoError(t, os.Remove(f.Name())) }()
 
 	res, err := New("bash", "-c", ">&2 echo stderr; echo stdout").
@@ -281,8 +287,9 @@ func TestSuccessLogWriterStdErrAndStdOut(t *testing.T) {
 }
 
 func TestSuccessLogWriterStdErrAndStdOutOnlyStdErr(t *testing.T) {
-	f, err := os.CreateTemp("", "log")
+	f, err := os.CreateTemp(t.TempDir(), "log")
 	require.NoError(t, err)
+
 	defer func() { require.NoError(t, os.Remove(f.Name())) }()
 
 	res, err := New("bash", "-c", ">&2 echo stderr; echo stdout").
@@ -295,8 +302,9 @@ func TestSuccessLogWriterStdErrAndStdOutOnlyStdErr(t *testing.T) {
 }
 
 func TestSuccessLogWriterStdErrAndStdOutOnlyStdOut(t *testing.T) {
-	f, err := os.CreateTemp("", "log")
+	f, err := os.CreateTemp(t.TempDir(), "log")
 	require.NoError(t, err)
+
 	defer func() { require.NoError(t, os.Remove(f.Name())) }()
 
 	res, err := New("bash", "-c", ">&2 echo stderr; echo stdout").
@@ -328,6 +336,7 @@ func TestCommandsFailure(t *testing.T) {
 func TestEnv(t *testing.T) {
 	t.Setenv("ABC", "test") // preserved
 	t.Setenv("FOO", "test") // overwritten
+
 	res, err := New("sh", "-c", "echo $TEST; echo $FOO; echo $ABC").
 		Env("TEST=123").
 		Env("FOO=bar").

@@ -36,7 +36,7 @@ func TestSHA512ForFile(t *testing.T) {
 	}{
 		{ // success
 			prepare: func() string {
-				f, err := os.CreateTemp("", "")
+				f, err := os.CreateTemp(t.TempDir(), "")
 				require.NoError(t, err)
 
 				_, err = f.WriteString("test")
@@ -75,7 +75,7 @@ func TestSHA256ForFile(t *testing.T) {
 	}{
 		{ // success
 			prepare: func() string {
-				f, err := os.CreateTemp("", "")
+				f, err := os.CreateTemp(t.TempDir(), "")
 				require.NoError(t, err)
 
 				_, err = f.WriteString("test")
@@ -112,7 +112,7 @@ func TestSHA1ForFile(t *testing.T) {
 	}{
 		{ // success
 			prepare: func() string {
-				f, err := os.CreateTemp("", "")
+				f, err := os.CreateTemp(t.TempDir(), "")
 				require.NoError(t, err)
 
 				_, err = f.WriteString("test")
@@ -149,7 +149,7 @@ func TestForFile(t *testing.T) {
 	}{
 		{ // success
 			prepare: func() (string, hash.Hash) {
-				f, err := os.CreateTemp("", "")
+				f, err := os.CreateTemp(t.TempDir(), "")
 				require.NoError(t, err)
 
 				_, err = f.WriteString("test")

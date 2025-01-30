@@ -19,6 +19,7 @@ package tar
 import (
 	"archive/tar"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -78,12 +79,14 @@ func compress(preserveRootDirStructure bool, tarFilePath, tarContentsPath string
 
 		if fileInfo.IsDir() || filePath == tarFilePath {
 			logrus.Tracef("Skipping: %s", filePath)
+
 			return nil
 		}
 
 		for _, re := range excludes {
 			if re != nil && re.MatchString(filePath) {
 				logrus.Tracef("Excluding: %s", filePath)
+
 				return nil
 			}
 		}
@@ -145,7 +148,9 @@ func Extract(tarFilePath, destinationPath string) error {
 				if err != nil {
 					return false, fmt.Errorf("SanitizeArchivePath: %w", err)
 				}
+
 				logrus.Tracef("Creating directory %s", targetDir)
+
 				if err := os.MkdirAll(targetDir, os.FileMode(0o755)); err != nil {
 					return false, fmt.Errorf("create target directory: %w", err)
 				}
@@ -154,14 +159,17 @@ func Extract(tarFilePath, destinationPath string) error {
 				if err != nil {
 					return false, fmt.Errorf("SanitizeArchivePath: %w", err)
 				}
+
 				logrus.Tracef(
 					"Creating symlink %s -> %s", header.Linkname, targetFile,
 				)
+
 				if err := os.MkdirAll(
 					filepath.Dir(targetFile), os.FileMode(0o755),
 				); err != nil {
 					return false, fmt.Errorf("create target directory: %w", err)
 				}
+
 				if err := os.Symlink(header.Linkname, targetFile); err != nil {
 					return false, fmt.Errorf("create symlink: %w", err)
 				}
@@ -172,6 +180,7 @@ func Extract(tarFilePath, destinationPath string) error {
 				if err != nil {
 					return false, fmt.Errorf("SanitizeArchivePath: %w", err)
 				}
+
 				logrus.Tracef("Creating file %s", targetFile)
 
 				if err := os.MkdirAll(
@@ -192,6 +201,7 @@ func Extract(tarFilePath, destinationPath string) error {
 				if _, err := io.Copy(outFile, reader); err != nil {
 					return false, fmt.Errorf("copy file contents %s: %w", targetFile, err)
 				}
+
 				outFile.Close()
 
 			default:
@@ -226,8 +236,10 @@ func ReadFileFromGzippedTar(
 		func(reader *tar.Reader, header *tar.Header) (stop bool, err error) {
 			if header.Name == filePath {
 				res = reader
+
 				return true, nil
 			}
+
 			return false, nil
 		},
 	); err != nil {
@@ -256,11 +268,12 @@ func iterateTarball(
 	if err != nil {
 		return fmt.Errorf("creating gzip reader for file %q: %w", tarPath, err)
 	}
+
 	tarReader := tar.NewReader(gzipReader)
 
 	for {
 		tarHeader, err := tarReader.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break // End of archive
 		}
 
@@ -268,6 +281,7 @@ func iterateTarball(
 		if err != nil {
 			return err
 		}
+
 		if stop {
 			// User wants to stop
 			break

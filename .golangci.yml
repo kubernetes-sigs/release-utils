@@ -3,14 +3,6 @@ run:
   concurrency: 6
   timeout: 5m
 issues:
-  exclude-rules:
-    # counterfeiter fakes are usually named 'fake_<something>.go'
-    - path: fake_.*\.go
-      linters:
-        - gocritic
-        - golint
-        - dupl
-
   # Maximum issues count per one linter. Set to 0 to disable. Default is 50.
   max-issues-per-linter: 0
 
@@ -29,10 +21,13 @@ linters:
     - decorder
     - dogsled
     - dupl
+    - dupword
     - durationcheck
     - errcheck
     - errchkjson
     - errname
+    - errorlint
+    - exptostd
     - fatcontext
     - gci
     - ginkgolinter
@@ -55,6 +50,7 @@ linters:
     - gosmopolitan
     - govet
     - grouper
+    - iface
     - importas
     - ineffassign
     - intrange
@@ -64,6 +60,8 @@ linters:
     - misspell
     - musttag
     - nakedret
+    - nilnesserr
+    - nlreturn
     - nolintlint
     - nosprintfhostport
     - perfsprint
@@ -72,6 +70,7 @@ linters:
     - promlinter
     - protogetter
     - reassign
+    - recvcheck
     - revive
     - rowserrcheck
     - sloglint
@@ -88,14 +87,14 @@ linters:
     - unparam
     - unused
     - usestdlibvars
+    - usetesting
     - whitespace
+    - wsl
     - zerologlint
     # - containedctx
     # - cyclop
     # - depguard
-    # - dupword
     # - err113
-    # - errorlint
     # - exhaustive
     # - exhaustruct
     # - forbidigo
@@ -113,7 +112,6 @@ linters:
     # - nestif
     # - nilerr
     # - nilnil
-    # - nlreturn
     # - noctx
     # - nonamedreturns
     # - paralleltest
@@ -124,7 +122,6 @@ linters:
     # - varnamelen
     # - wastedassign
     # - wrapcheck
-    # - wsl
 linters-settings:
   gci:
     sections:
@@ -140,9 +137,6 @@ linters-settings:
       - BUG
       - FIXME
       - HACK
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
   gocritic:
     enabled-checks:
       - appendCombine
@@ -185,6 +179,7 @@ linters-settings:
       - preferStringWriter
       - preferWriteByte
       - ptrToRefParam
+      - rangeAppendAll
       - rangeExprCopy
       - rangeValCopy
       - redundantSprint
@@ -216,16 +211,3 @@ linters-settings:
       - weakCond
       - yodaStyleExpr
       # - whyNoLint
-  nolintlint:
-    # Enable to ensure that nolint directives are all used. Default is true.
-    allow-unused: false
-    # Disable to ensure that nolint directives don't have a leading space. Default is true.
-    # TODO(lint): Enforce machine-readable `nolint` directives
-    allow-leading-space: true
-    # Exclude following linters from requiring an explanation.  Default is [].
-    allow-no-explanation: []
-    # Enable to require an explanation of nonzero length after each nolint directive. Default is false.
-    # TODO(lint): Enforce explanations for `nolint` directives
-    require-explanation: false
-    # Enable to require nolint directives to mention the specific linter being suppressed. Default is false.
-    require-specific: true

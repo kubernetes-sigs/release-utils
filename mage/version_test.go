@@ -23,8 +23,10 @@ func TestGenerateLDFlags(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to generate ld flags: %v", err)
 	}
+
 	if got == "" {
 		t.Errorf("GenerateLDFlags() failed to return a string")
 	}
+
 	t.Log(got)
 }
