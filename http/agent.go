@@ -23,9 +23,11 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/nozzle/throttler"
 	"github.com/sirupsen/logrus"
 )
@@ -59,7 +61,8 @@ type agentOptions struct {
 	FailOnHTTPError bool          // Set to true to fail on HTTP Status > 299
 	Retries         uint          // Number of times to retry when errors happen
 	Timeout         time.Duration // Timeout when fetching URLs
-	MaxWaitTime     time.Duration // Max waiting time when backing off
+	WaitTime        time.Duration // Initial wait time for backing off on retry
+	MaxWaitTime     time.Duration // Max waiting time when backing off on retry
 	PostContentType string        // Content type to send when posting data
 	MaxParallel     uint          // Maximum number of parallel requests when requesting groups
 }
@@ -76,6 +79,7 @@ var defaultAgentOptions = &agentOptions{
 	FailOnHTTPError: true,
 	Retries:         3,
 	Timeout:         3 * time.Second,
+	WaitTime:        2 * time.Second,
 	MaxWaitTime:     60 * time.Second,
 	PostContentType: defaultPostContentType,
 	MaxParallel:     5,
@@ -104,6 +108,20 @@ func (a *Agent) WithTimeout(timeout time.Duration) *Agent {
 // WithRetries sets the number of times we'll attempt to fetch the URL.
 func (a *Agent) WithRetries(retries uint) *Agent {
 	a.options.Retries = retries
+
+	return a
+}
+
+// WithWaitTime sets the initial wait time for request retry.
+func (a *Agent) WithWaitTime(time time.Duration) *Agent {
+	a.options.WaitTime = time
+
+	return a
+}
+
+// WithMaxWaitTime sets the maximum wait time for request retry.
+func (a *Agent) WithMaxWaitTime(time time.Duration) *Agent {
+	a.options.MaxWaitTime = time
 
 	return a
 }
@@ -145,28 +163,9 @@ func (a *Agent) Get(url string) (content []byte, err error) {
 func (a *Agent) GetRequest(url string) (response *http.Response, err error) {
 	logrus.Debugf("Sending GET request to %s", url)
 
-	var try uint
-
-	for {
-		response, err = a.AgentImplementation.SendGetRequest(a.Client(), url)
-		try++
-
-		if err == nil || try >= a.options.Retries {
-			return response, err
-		}
-		// Do exponential backoff...
-		waitTime := math.Pow(2, float64(try))
-		//  ... but wait no more than 1 min
-		if waitTime > 60 {
-			waitTime = a.options.MaxWaitTime.Seconds()
-		}
-
-		logrus.Errorf(
-			"Error getting URL (will retry %d more times in %.0f secs): %s",
-			a.options.Retries-try, waitTime, err.Error(),
-		)
-		time.Sleep(time.Duration(waitTime) * time.Second)
-	}
+	return a.retryRequest(func() (*http.Response, error) {
+		return a.AgentImplementation.SendGetRequest(a.Client(), url)
+	})
 }
 
 // Post returns the body of a POST request.
@@ -184,28 +183,49 @@ func (a *Agent) Post(url string, postData []byte) (content []byte, err error) {
 func (a *Agent) PostRequest(url string, postData []byte) (response *http.Response, err error) {
 	logrus.Debugf("Sending POST request to %s", url)
 
-	var try uint
+	return a.retryRequest(func() (*http.Response, error) {
+		return a.AgentImplementation.SendPostRequest(a.Client(), url, postData, a.options.PostContentType)
+	})
+}
 
-	for {
-		response, err = a.AgentImplementation.SendPostRequest(a.Client(), url, postData, a.options.PostContentType)
-		try++
-
-		if err == nil || try >= a.options.Retries {
-			return response, err
-		}
-		// Do exponential backoff...
-		waitTime := math.Pow(2, float64(try))
-		//  ... but wait no more than 1 min
-		if waitTime > 60 {
-			waitTime = a.options.MaxWaitTime.Seconds()
+func (a *Agent) retryRequest(do func() (*http.Response, error)) (response *http.Response, err error) {
+	err = retry.Do(func() error {
+		//nolint:bodyclose // The API consumer should close the body
+		response, err = do()
+		if retryErr := shouldRetry(response, err); retryErr != nil {
+			return retryErr
 		}
 
-		logrus.Errorf(
-			"Error getting URL (will retry %d more times in %.0f secs): %s",
-			a.options.Retries-try, waitTime, err.Error(),
-		)
-		time.Sleep(time.Duration(waitTime) * time.Second)
+		return nil
+	},
+		retry.Attempts(a.options.Retries),
+		retry.Delay(a.options.WaitTime),
+		retry.MaxDelay(a.options.MaxWaitTime),
+		retry.DelayType(retry.BackOffDelay),
+		retry.OnRetry(func(attempt uint, err error) {
+			logrus.Errorf("Unable to do request (attempt %d/%d): %v", attempt+1, a.options.Retries, err)
+		}),
+	)
+
+	return response, err
+}
+
+func shouldRetry(resp *http.Response, err error) error {
+	urlErr := &url.Error{}
+	if err != nil && errors.As(err, &urlErr) {
+		return err
 	}
+
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return fmt.Errorf("retry %d: %s", resp.StatusCode, resp.Status)
+	}
+
+	if resp.StatusCode == 0 || (resp.StatusCode >= 500 &&
+		resp.StatusCode != http.StatusNotImplemented) {
+		return fmt.Errorf("retry unexpected HTTP status %d: %s", resp.StatusCode, resp.Status)
+	}
+
+	return nil
 }
 
 // Head returns the body of a HEAD request.
