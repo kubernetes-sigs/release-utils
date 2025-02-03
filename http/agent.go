@@ -192,11 +192,8 @@ func (a *Agent) retryRequest(do func() (*http.Response, error)) (response *http.
 	err = retry.Do(func() error {
 		//nolint:bodyclose // The API consumer should close the body
 		response, err = do()
-		if retryErr := shouldRetry(response, err); retryErr != nil {
-			return retryErr
-		}
 
-		return nil
+		return shouldRetry(response, err)
 	},
 		retry.Attempts(a.options.Retries),
 		retry.Delay(a.options.WaitTime),
