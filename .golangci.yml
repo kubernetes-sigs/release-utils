@@ -79,7 +79,6 @@ linters:
     - staticcheck
     - stylecheck
     - tagalign
-    - tenv
     - testableexamples
     - testifylint
     - typecheck
