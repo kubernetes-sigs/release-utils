@@ -164,7 +164,7 @@ func (a *Agent) GetRequest(url string) (response *http.Response, err error) {
 	logrus.Debugf("Sending GET request to %s", url)
 
 	return a.retryRequest(func() (*http.Response, error) {
-		return a.AgentImplementation.SendGetRequest(a.Client(), url)
+		return a.SendGetRequest(a.Client(), url)
 	})
 }
 
@@ -184,7 +184,7 @@ func (a *Agent) PostRequest(url string, postData []byte) (response *http.Respons
 	logrus.Debugf("Sending POST request to %s", url)
 
 	return a.retryRequest(func() (*http.Response, error) {
-		return a.AgentImplementation.SendPostRequest(a.Client(), url, postData, a.options.PostContentType)
+		return a.SendPostRequest(a.Client(), url, postData, a.options.PostContentType)
 	})
 }
 
@@ -243,7 +243,7 @@ func (a *Agent) HeadRequest(url string) (response *http.Response, err error) {
 	var try uint
 
 	for {
-		response, err = a.AgentImplementation.SendHeadRequest(a.Client(), url)
+		response, err = a.SendHeadRequest(a.Client(), url)
 		try++
 
 		if err == nil || try >= a.options.Retries {
@@ -343,7 +343,7 @@ func (a *Agent) readResponse(response *http.Response, w io.Writer) (err error) {
 
 // GetToWriter sends a get request and writes the response to an io.Writer.
 func (a *Agent) GetToWriter(w io.Writer, url string) error {
-	resp, err := a.AgentImplementation.SendGetRequest(a.Client(), url)
+	resp, err := a.SendGetRequest(a.Client(), url)
 	if err != nil {
 		return fmt.Errorf("sending GET request: %w", err)
 	}
@@ -353,7 +353,7 @@ func (a *Agent) GetToWriter(w io.Writer, url string) error {
 
 // PostToWriter sends a request to a url and writes the response to an io.Writer.
 func (a *Agent) PostToWriter(w io.Writer, url string, postData []byte) error {
-	resp, err := a.AgentImplementation.SendPostRequest(a.Client(), url, postData, a.options.PostContentType)
+	resp, err := a.SendPostRequest(a.Client(), url, postData, a.options.PostContentType)
 	if err != nil {
 		return fmt.Errorf("sending POST request: %w", err)
 	}
@@ -374,7 +374,7 @@ func (a *Agent) GetRequestGroup(urls []string) ([]*http.Response, []error) {
 	for i := range urls {
 		go func(url string) {
 			//nolint: bodyclose // We don't close here as we're returning the response
-			resp, err := a.AgentImplementation.SendGetRequest(a.Client(), url)
+			resp, err := a.SendGetRequest(a.Client(), url)
 
 			m.Lock()
 			ret[i] = resp
@@ -416,7 +416,7 @@ func (a *Agent) PostRequestGroup(urls []string, postData [][]byte) ([]*http.Resp
 	for i := range urls {
 		go func(url string, pdata []byte) {
 			//nolint: bodyclose // We don't close here as we're returning the raw response
-			resp, err := a.AgentImplementation.SendPostRequest(
+			resp, err := a.SendPostRequest(
 				a.Client(), url, pdata, a.options.PostContentType,
 			)
 
