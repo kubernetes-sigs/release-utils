@@ -113,15 +113,15 @@ func (a *Agent) WithRetries(retries uint) *Agent {
 }
 
 // WithWaitTime sets the initial wait time for request retry.
-func (a *Agent) WithWaitTime(time time.Duration) *Agent {
-	a.options.WaitTime = time
+func (a *Agent) WithWaitTime(t time.Duration) *Agent {
+	a.options.WaitTime = t
 
 	return a
 }
 
 // WithMaxWaitTime sets the maximum wait time for request retry.
-func (a *Agent) WithMaxWaitTime(time time.Duration) *Agent {
-	a.options.MaxWaitTime = time
+func (a *Agent) WithMaxWaitTime(t time.Duration) *Agent {
+	a.options.MaxWaitTime = t
 
 	return a
 }
@@ -149,8 +149,8 @@ func (a *Agent) Client() *http.Client {
 }
 
 // Get returns the body a GET request.
-func (a *Agent) Get(url string) (content []byte, err error) {
-	request, err := a.GetRequest(url)
+func (a *Agent) Get(u string) (content []byte, err error) {
+	request, err := a.GetRequest(u)
 	if err != nil {
 		return nil, fmt.Errorf("getting GET request: %w", err)
 	}
@@ -160,17 +160,17 @@ func (a *Agent) Get(url string) (content []byte, err error) {
 }
 
 // GetRequest sends a GET request to a URL and returns the request and response.
-func (a *Agent) GetRequest(url string) (response *http.Response, err error) {
-	logrus.Debugf("Sending GET request to %s", url)
+func (a *Agent) GetRequest(u string) (response *http.Response, err error) {
+	logrus.Debugf("Sending GET request to %s", u)
 
 	return a.retryRequest(func() (*http.Response, error) {
-		return a.SendGetRequest(a.Client(), url)
+		return a.SendGetRequest(a.Client(), u)
 	})
 }
 
 // Post returns the body of a POST request.
-func (a *Agent) Post(url string, postData []byte) (content []byte, err error) {
-	response, err := a.PostRequest(url, postData)
+func (a *Agent) Post(u string, postData []byte) (content []byte, err error) {
+	response, err := a.PostRequest(u, postData)
 	if err != nil {
 		return nil, fmt.Errorf("getting post request: %w", err)
 	}
@@ -180,11 +180,11 @@ func (a *Agent) Post(url string, postData []byte) (content []byte, err error) {
 }
 
 // PostRequest sends the postData in a POST request to a URL and returns the request object.
-func (a *Agent) PostRequest(url string, postData []byte) (response *http.Response, err error) {
-	logrus.Debugf("Sending POST request to %s", url)
+func (a *Agent) PostRequest(u string, postData []byte) (response *http.Response, err error) {
+	logrus.Debugf("Sending POST request to %s", u)
 
 	return a.retryRequest(func() (*http.Response, error) {
-		return a.SendPostRequest(a.Client(), url, postData, a.options.PostContentType)
+		return a.SendPostRequest(a.Client(), u, postData, a.options.PostContentType)
 	})
 }
 
@@ -226,8 +226,8 @@ func shouldRetry(resp *http.Response, err error) error {
 }
 
 // Head returns the body of a HEAD request.
-func (a *Agent) Head(url string) (content []byte, err error) {
-	response, err := a.HeadRequest(url)
+func (a *Agent) Head(u string) (content []byte, err error) {
+	response, err := a.HeadRequest(u)
 	if err != nil {
 		return nil, fmt.Errorf("getting head request: %w", err)
 	}
@@ -237,13 +237,13 @@ func (a *Agent) Head(url string) (content []byte, err error) {
 }
 
 // HeadRequest sends a HEAD request to a URL and returns the request and response.
-func (a *Agent) HeadRequest(url string) (response *http.Response, err error) {
-	logrus.Debugf("Sending HEAD request to %s", url)
+func (a *Agent) HeadRequest(u string) (response *http.Response, err error) {
+	logrus.Debugf("Sending HEAD request to %s", u)
 
 	var try uint
 
 	for {
-		response, err = a.SendHeadRequest(a.Client(), url)
+		response, err = a.SendHeadRequest(a.Client(), u)
 		try++
 
 		if err == nil || try >= a.options.Retries {
@@ -266,39 +266,39 @@ func (a *Agent) HeadRequest(url string) (response *http.Response, err error) {
 
 // SendPostRequest sends the actual HTTP post to the server.
 func (impl *defaultAgentImplementation) SendPostRequest(
-	client *http.Client, url string, postData []byte, contentType string,
+	client *http.Client, u string, postData []byte, contentType string,
 ) (response *http.Response, err error) {
 	if contentType == "" {
 		contentType = defaultPostContentType
 	}
 
-	response, err = client.Post(url, contentType, bytes.NewBuffer(postData))
+	response, err = client.Post(u, contentType, bytes.NewBuffer(postData))
 	if err != nil {
-		return response, fmt.Errorf("posting data to %s: %w", url, err)
+		return response, fmt.Errorf("posting data to %s: %w", u, err)
 	}
 
 	return response, nil
 }
 
 // SendGetRequest performs the actual request.
-func (impl *defaultAgentImplementation) SendGetRequest(client *http.Client, url string) (
+func (impl *defaultAgentImplementation) SendGetRequest(client *http.Client, u string) (
 	response *http.Response, err error,
 ) {
-	response, err = client.Get(url)
+	response, err = client.Get(u)
 	if err != nil {
-		return response, fmt.Errorf("getting %s: %w", url, err)
+		return response, fmt.Errorf("getting %s: %w", u, err)
 	}
 
 	return response, nil
 }
 
 // SendHeadRequest performs the actual request.
-func (impl *defaultAgentImplementation) SendHeadRequest(client *http.Client, url string) (
+func (impl *defaultAgentImplementation) SendHeadRequest(client *http.Client, u string) (
 	response *http.Response, err error,
 ) {
-	response, err = client.Head(url)
+	response, err = client.Head(u)
 	if err != nil {
-		return response, fmt.Errorf("sending head request %s: %w", url, err)
+		return response, fmt.Errorf("sending head request %s: %w", u, err)
 	}
 
 	return response, nil
@@ -342,8 +342,8 @@ func (a *Agent) readResponse(response *http.Response, w io.Writer) (err error) {
 }
 
 // GetToWriter sends a get request and writes the response to an io.Writer.
-func (a *Agent) GetToWriter(w io.Writer, url string) error {
-	resp, err := a.SendGetRequest(a.Client(), url)
+func (a *Agent) GetToWriter(w io.Writer, u string) error {
+	resp, err := a.SendGetRequest(a.Client(), u)
 	if err != nil {
 		return fmt.Errorf("sending GET request: %w", err)
 	}
@@ -352,8 +352,8 @@ func (a *Agent) GetToWriter(w io.Writer, url string) error {
 }
 
 // PostToWriter sends a request to a url and writes the response to an io.Writer.
-func (a *Agent) PostToWriter(w io.Writer, url string, postData []byte) error {
-	resp, err := a.SendPostRequest(a.Client(), url, postData, a.options.PostContentType)
+func (a *Agent) PostToWriter(w io.Writer, u string, postData []byte) error {
+	resp, err := a.SendPostRequest(a.Client(), u, postData, a.options.PostContentType)
 	if err != nil {
 		return fmt.Errorf("sending POST request: %w", err)
 	}
