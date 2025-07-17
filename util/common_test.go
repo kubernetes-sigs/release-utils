@@ -540,6 +540,7 @@ func TestCleanLogFile(t *testing.T) {
 	require.NoError(t, err, "creating test logfile")
 
 	defer os.Remove(logfile.Name())
+
 	err = os.WriteFile(logfile.Name(), []byte(originalLog), os.FileMode(0o644))
 	require.NoError(t, err, "writing test file")
 

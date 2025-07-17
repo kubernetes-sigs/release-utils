@@ -44,6 +44,7 @@ func TestNewTableWriter(t *testing.T) {
 		t.Parallel()
 
 		var output bytes.Buffer
+
 		table := NewTableWriter(&output)
 
 		require.NotNil(t, table)
@@ -60,6 +61,7 @@ func TestNewTableWriter(t *testing.T) {
 		t.Parallel()
 
 		var output bytes.Buffer
+
 		table := NewTableWriter(&output, tablewriter.WithMaxWidth(80))
 
 		require.NotNil(t, table)
@@ -76,6 +78,7 @@ func TestNewTableWriter(t *testing.T) {
 		t.Parallel()
 
 		var output bytes.Buffer
+
 		table := NewTableWriter(&output,
 			tablewriter.WithHeader([]string{"Name", "Age"}),
 			tablewriter.WithMaxWidth(80),
@@ -94,6 +97,7 @@ func TestNewTableWriter(t *testing.T) {
 		t.Parallel()
 
 		var output bytes.Buffer
+
 		table := NewTableWriter(&output, tablewriter.WithHeader([]string{"Name", "Age"}))
 
 		require.NotNil(t, table)
@@ -109,6 +113,7 @@ func TestNewTableWriter(t *testing.T) {
 		t.Parallel()
 
 		var output bytes.Buffer
+
 		table := NewTableWriter(&output, tablewriter.WithFooter([]string{"Total", "1"}))
 
 		require.NotNil(t, table)
@@ -125,6 +130,7 @@ func TestNewTableWriter(t *testing.T) {
 		t.Parallel()
 
 		var output bytes.Buffer
+
 		table := NewTableWriter(&output)
 
 		require.NotNil(t, table)
@@ -140,6 +146,7 @@ func TestNewTableWriter(t *testing.T) {
 		t.Parallel()
 
 		var output bytes.Buffer
+
 		table := NewTableWriter(&output)
 
 		require.NotNil(t, table)

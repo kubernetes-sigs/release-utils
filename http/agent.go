@@ -377,12 +377,15 @@ func (a *Agent) GetRequestGroup(urls []string) ([]*http.Response, []error) {
 			resp, err := a.SendGetRequest(a.Client(), url)
 
 			m.Lock()
+
 			ret[i] = resp
 			errs[i] = err
+
 			m.Unlock()
 
 			t.Done(err)
 		}(urls[i])
+
 		t.Throttle()
 	}
 
@@ -421,11 +424,14 @@ func (a *Agent) PostRequestGroup(urls []string, postData [][]byte) ([]*http.Resp
 			)
 
 			m.Lock()
+
 			ret[i] = resp
 			errs[i] = err
+
 			m.Unlock()
 			t.Done(err)
 		}(urls[i], postData[i])
+
 		t.Throttle()
 	}
 

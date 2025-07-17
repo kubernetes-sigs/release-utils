@@ -122,6 +122,7 @@ func TestAgentGetToWriter(t *testing.T) {
 
 			resp := getTestResponse()
 			defer resp.Body.Close()
+
 			tc.prepare(fake, resp)
 
 			var buf bytes.Buffer
@@ -203,6 +204,7 @@ func TestAgentPostToWriter(t *testing.T) {
 
 			resp := getTestResponse()
 			defer resp.Body.Close()
+
 			tc.prepare(fake, resp)
 
 			var buf bytes.Buffer
