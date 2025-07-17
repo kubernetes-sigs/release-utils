@@ -52,6 +52,7 @@ func (t TTY) Safe(fn func() error) error {
 	if !isTerminal && t.TryDev {
 		if f, err := os.Open("/dev/tty"); err == nil {
 			defer f.Close()
+
 			inFd = f.Fd()
 			isTerminal = term.IsTerminal(inFd)
 		}

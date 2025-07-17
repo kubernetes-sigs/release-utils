@@ -141,6 +141,7 @@ func TestExtract(t *testing.T) {
 	require.NoError(t, err)
 
 	defer os.Remove(file.Name())
+
 	_, err = file.Write(tarball)
 	require.NoError(t, err)
 

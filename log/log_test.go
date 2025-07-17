@@ -29,6 +29,7 @@ import (
 func TestToFile(t *testing.T) {
 	file, err := os.CreateTemp(t.TempDir(), "log-test-")
 	require.NoError(t, err)
+
 	defer os.Remove(file.Name())
 
 	require.NoError(t, log.SetupGlobalLogger("info"))

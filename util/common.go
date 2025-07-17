@@ -238,8 +238,10 @@ func readInput(question string) (string, error) {
 	go func() {
 		scanner := bufio.NewScanner(os.Stdin)
 		scanner.Scan()
+
 		response := scanner.Text()
 		inputChannel <- response
+
 		close(inputChannel)
 	}()
 
