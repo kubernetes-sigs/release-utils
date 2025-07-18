@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package util
+package helpers
 
 import (
 	"bytes"
@@ -159,5 +159,43 @@ func TestNewTableWriter(t *testing.T) {
 		_ = table.Render()
 
 		compareGolden(t, output.String(), "multiple_rows.golden")
+	})
+}
+
+func TestNewTableWriterWithDefaults(t *testing.T) {
+	t.Parallel()
+
+	t.Run("WithDefaults", func(t *testing.T) {
+		t.Parallel()
+
+		var output bytes.Buffer
+
+		table := NewTableWriterWithDefaults(&output)
+
+		require.NotNil(t, table)
+		require.IsType(t, &tablewriter.Table{}, table)
+	})
+
+	t.Run("WithDefaultsAndHeader", func(t *testing.T) {
+		t.Parallel()
+
+		var output bytes.Buffer
+
+		header := []string{"TESTGRID BOARD", "TITLE", "STATUS", "STATUS DETAILS"}
+		table := NewTableWriterWithDefaultsAndHeader(&output, header)
+
+		require.NotNil(t, table)
+		require.IsType(t, &tablewriter.Table{}, table)
+	})
+
+	t.Run("WithDefaultsAndAdditionalOptions", func(t *testing.T) {
+		t.Parallel()
+
+		var output bytes.Buffer
+
+		table := NewTableWriterWithDefaults(&output, tablewriter.WithMaxWidth(100))
+
+		require.NotNil(t, table)
+		require.IsType(t, &tablewriter.Table{}, table)
 	})
 }
