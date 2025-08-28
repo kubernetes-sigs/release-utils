@@ -12,7 +12,7 @@ require (
 	github.com/olekukonko/tablewriter v1.0.9
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
-	github.com/stretchr/testify v1.11.0
+	github.com/stretchr/testify v1.11.1
 	github.com/uwu-tools/magex v0.10.1
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 )
