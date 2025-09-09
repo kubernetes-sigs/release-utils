@@ -14,7 +14,7 @@ require (
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	github.com/uwu-tools/magex v0.10.1
-	k8s.io/utils v0.0.0-20241210054802-24370beab758
+	k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d
 )
 
 require (
