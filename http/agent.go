@@ -189,6 +189,10 @@ func (a *Agent) PostRequest(u string, postData []byte) (response *http.Response,
 }
 
 func (a *Agent) retryRequest(do func() (*http.Response, error)) (response *http.Response, err error) {
+	if a.options.Retries == 0 {
+		return do()
+	}
+
 	err = retry.Do(func() error {
 		//nolint:bodyclose // The API consumer should close the body
 		response, err = do()
