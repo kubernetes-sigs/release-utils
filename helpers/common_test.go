@@ -156,7 +156,13 @@ func TestMoreRecent(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			more, err := MoreRecent(tc.args.a, tc.args.b)
-			require.IsType(t, tc.want.err, err)
+			if tc.want.err != nil {
+				require.Error(t, err)
+				require.Equal(t, tc.want.err.Error(), err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+
 			require.Equal(t, tc.want.r, more)
 		})
 	}
