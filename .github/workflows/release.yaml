@@ -5,6 +5,8 @@ on:
     tags:
       - 'v*'
 
+permissions: {}
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -17,22 +19,30 @@ jobs:
         shell: bash
         run: |
           echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
       - name: Check out code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 1
+
+      - name: Extract version of Go to use
+        run: echo "GOVERSION=$(awk -F'[:@]' '/FROM golang/{print $2; exit}' Dockerfile.dev)" >> $GITHUB_ENV
+
       - name: Set up go
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
-          go-version-file: go.mod
+          go-version: '${{ env.GOVERSION }}'
           check-latest: true
           cache: false
+
       - name: Install bom
         uses: kubernetes-sigs/release-actions/setup-bom@a30d93cf2aa029e1e4c8a6c79f766aebf429fddb # v0.3.1
+
       - name: Generate SBOM
         shell: bash
         run: |
           bom generate -c .bom.yaml --format=json -o /tmp/sigs.k8s.io-release-utils-$TAG.spdx.json .
+
       - name: Publish Release
         uses: kubernetes-sigs/release-actions/publish-release@a30d93cf2aa029e1e4c8a6c79f766aebf429fddb # v0.3.1
         env:
