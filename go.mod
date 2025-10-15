@@ -3,7 +3,7 @@ module sigs.k8s.io/release-utils
 go 1.24.0
 
 require (
-	github.com/avast/retry-go/v4 v4.6.1
+	github.com/avast/retry-go/v4 v4.7.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.12.0
