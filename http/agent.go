@@ -142,9 +142,10 @@ func (a *Agent) WithMaxParallel(workers int) *Agent {
 	return a
 }
 
-// WithClient allows callers to set a custom http client in the agent
+// WithClient allows callers to set a custom http client in the agent.
 func (a *Agent) WithClient(c *http.Client) *Agent {
 	a.client = c
+
 	return a
 }
 
@@ -153,6 +154,7 @@ func (a *Agent) Client() *http.Client {
 	if a.client == nil {
 		a.client = http.DefaultClient
 	}
+
 	a.client.Timeout = a.options.Timeout
 
 	return a.client
