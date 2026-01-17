@@ -42,6 +42,7 @@ const (
 // Agent is an http agent.
 type Agent struct {
 	options *agentOptions
+	client  *http.Client
 	AgentImplementation
 }
 
@@ -141,11 +142,20 @@ func (a *Agent) WithMaxParallel(workers int) *Agent {
 	return a
 }
 
+// WithClient allows callers to set a custom http client in the agent
+func (a *Agent) WithClient(c *http.Client) *Agent {
+	a.client = c
+	return a
+}
+
 // Client return an net/http client preconfigured with the agent options.
 func (a *Agent) Client() *http.Client {
-	return &http.Client{
-		Timeout: a.options.Timeout,
+	if a.client == nil {
+		a.client = http.DefaultClient
 	}
+	a.client.Timeout = a.options.Timeout
+
+	return a.client
 }
 
 // Get returns the body a GET request.
