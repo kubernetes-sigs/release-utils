@@ -19,6 +19,7 @@ package http_test
 import (
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 
@@ -159,4 +160,24 @@ func TestPostRequest(t *testing.T) {
 		//nolint:bodyclose // no need to close for mocked tests
 		tc.assert(agent.PostRequest("", nil))
 	}
+}
+
+func TestWithClient(t *testing.T) {
+	// Create a test server that returns a specific response
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("custom-client-response")) //nolint:errcheck
+	}))
+	defer server.Close()
+
+	customClient := &http.Client{}
+	agent := rhttp.NewAgent().WithClient(customClient)
+
+	// Verify the custom client is returned
+	assert.Equal(t, customClient, agent.Client())
+
+	// Make a request using the agent with the custom client
+	response, err := agent.Get(server.URL)
+	require.NoError(t, err)
+	assert.Equal(t, "custom-client-response", string(response))
 }
