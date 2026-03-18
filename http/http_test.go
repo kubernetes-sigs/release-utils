@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -142,6 +143,61 @@ func TestAgentGetToWriter(t *testing.T) {
 	}
 }
 
+func TestAgentGetRetriesOnSendError(t *testing.T) {
+	agent := NewTestAgent().WithWaitTime(0)
+	fake := &httpfakes.FakeAgentImplementation{}
+	agent.SetImplementation(fake)
+
+	sendErr := &url.Error{Op: "Get", URL: "http://www.example.com/", Err: errors.New("connection refused")}
+	fake.SendGetRequestReturnsOnCall(0, nil, sendErr)
+	fake.SendGetRequestReturnsOnCall(1, getTestResponse(), nil) //nolint:bodyclose // closed by readResponse
+
+	b, err := agent.Get("http://www.example.com/")
+	require.NoError(t, err)
+	require.Equal(t, []byte("hello sig-release!"), b)
+	require.Equal(t, 2, fake.SendGetRequestCallCount())
+}
+
+func TestAgentGetRetriesOnResponseReadTimeout(t *testing.T) {
+	agent := NewTestAgent().WithWaitTime(0)
+	fake := &httpfakes.FakeAgentImplementation{}
+	agent.SetImplementation(fake)
+
+	fake.SendGetRequestReturnsOnCall(0, &http.Response{
+		Status:        "200 OK",
+		StatusCode:    http.StatusOK,
+		Body:          timeoutReadCloser{},
+		ContentLength: -1,
+		Close:         true,
+		Request:       &http.Request{},
+	}, nil)
+	fake.SendGetRequestReturnsOnCall(1, getTestResponse(), nil) //nolint:bodyclose // closed by readResponse
+
+	b, err := agent.Get("http://www.example.com/")
+	require.NoError(t, err)
+	require.Equal(t, []byte("hello sig-release!"), b)
+	require.Equal(t, 2, fake.SendGetRequestCallCount())
+}
+
+func TestAgentGetDoesNotRetryOnHTTPError(t *testing.T) {
+	agent := NewTestAgent().WithWaitTime(0)
+	fake := &httpfakes.FakeAgentImplementation{}
+	agent.SetImplementation(fake)
+
+	fake.SendGetRequestReturns(&http.Response{
+		Status:        "404 Not Found",
+		StatusCode:    http.StatusNotFound,
+		Body:          io.NopCloser(bytes.NewReader([]byte("missing"))),
+		ContentLength: int64(len("missing")),
+		Close:         true,
+		Request:       &http.Request{},
+	}, nil)
+
+	_, err := agent.Get("http://www.example.com/")
+	require.Error(t, err)
+	require.Equal(t, 1, fake.SendGetRequestCallCount())
+}
+
 func TestAgentHead(t *testing.T) {
 	t.Parallel()
 
@@ -175,6 +231,30 @@ func getTestResponse() *http.Response {
 		Close:         true,
 		Request:       &http.Request{},
 	}
+}
+
+type timeoutReadCloser struct{}
+
+func (timeoutReadCloser) Read(_ []byte) (int, error) {
+	return 0, timeoutError{}
+}
+
+func (timeoutReadCloser) Close() error {
+	return nil
+}
+
+type timeoutError struct{}
+
+func (timeoutError) Error() string {
+	return "read timeout"
+}
+
+func (timeoutError) Timeout() bool {
+	return true
+}
+
+func (timeoutError) Temporary() bool {
+	return true
 }
 
 func TestAgentPostToWriter(t *testing.T) {

@@ -18,10 +18,12 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"math"
+	"net"
 	"net/http"
 	"net/url"
 	"sync"
@@ -162,13 +164,32 @@ func (a *Agent) Client() *http.Client {
 
 // Get returns the body a GET request.
 func (a *Agent) Get(u string) (content []byte, err error) {
-	request, err := a.GetRequest(u)
-	if err != nil {
-		return nil, fmt.Errorf("getting GET request: %w", err)
-	}
-	defer request.Body.Close()
+	var b bytes.Buffer
 
-	return a.readResponseToByteArray(request)
+	err = a.retryOperation(func() error {
+		b.Reset()
+
+		resp, sendErr := a.SendGetRequest(a.Client(), u)
+		if retryErr := shouldRetry(resp, sendErr); retryErr != nil {
+			if resp != nil {
+				resp.Body.Close()
+			}
+
+			return retryErr
+		}
+
+		if readErr := a.readResponse(resp, &b); readErr != nil {
+			if shouldRetryReadError(readErr) {
+				return readErr
+			}
+
+			return retry.Unrecoverable(readErr)
+		}
+
+		return nil
+	})
+
+	return b.Bytes(), err
 }
 
 // GetRequest sends a GET request to a URL and returns the request and response.
@@ -223,6 +244,23 @@ func (a *Agent) retryRequest(do func() (*http.Response, error)) (response *http.
 	return response, err
 }
 
+// retryOperation retries a generic operation using the agent's retry settings.
+func (a *Agent) retryOperation(do func() error) error {
+	if a.options.Retries == 0 {
+		return do()
+	}
+
+	return retry.Do(do,
+		retry.Attempts(a.options.Retries),
+		retry.Delay(a.options.WaitTime),
+		retry.MaxDelay(a.options.MaxWaitTime),
+		retry.DelayType(retry.BackOffDelay),
+		retry.OnRetry(func(attempt uint, err error) {
+			logrus.Errorf("Unable to do request (attempt %d/%d): %v", attempt+1, a.options.Retries, err)
+		}),
+	)
+}
+
 func shouldRetry(resp *http.Response, err error) error {
 	urlErr := &url.Error{}
 	if err != nil && errors.As(err, &urlErr) {
@@ -239,6 +277,12 @@ func shouldRetry(resp *http.Response, err error) error {
 	}
 
 	return nil
+}
+
+func shouldRetryReadError(err error) bool {
+	var netErr net.Error
+
+	return errors.As(err, &netErr) && netErr.Timeout() || errors.Is(err, context.DeadlineExceeded)
 }
 
 // Head returns the body of a HEAD request.
