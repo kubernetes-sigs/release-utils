@@ -67,7 +67,7 @@ func ToFile(fileName string) error {
 
 // LevelNames returns a comma separated list of available levels.
 func LevelNames() string {
-	levels := []string{}
+	levels := make([]string, 0, len(logrus.AllLevels))
 	for _, level := range logrus.AllLevels {
 		levels = append(levels, fmt.Sprintf("'%s'", level.String()))
 	}

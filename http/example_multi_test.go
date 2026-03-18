@@ -30,7 +30,6 @@ import (
 func Example() {
 	// This example fetches 10 photographs from flick in parallel
 	agent := http.NewAgent()
-	w := []io.Writer{}
 	urls := []string{
 		"https://live.staticflickr.com/65535/53863838503_3490725fab.jpg",
 		"https://live.staticflickr.com/65535/53862224352_a9949bb818.jpg",
@@ -43,6 +42,7 @@ func Example() {
 		"https://live.staticflickr.com/65535/53863136849_965bd39df1_n.jpg",
 		"https://live.staticflickr.com/65535/53863672556_1050bbf01b_n.jpg",
 	}
+	w := make([]io.Writer, 0, len(urls))
 
 	for i := range urls {
 		f, err := os.Create(fmt.Sprintf("/tmp/photo-%d.jpg", i))
