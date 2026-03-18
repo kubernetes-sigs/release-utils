@@ -136,7 +136,8 @@ func RunGolangCILint(version string, forceInstall bool, args ...string) error {
 		return fmt.Errorf("listing golangci-lint linters: %w", err)
 	}
 
-	runArgs := []string{"run"}
+	runArgs := make([]string, 0, 1+len(args))
+	runArgs = append(runArgs, "run")
 	runArgs = append(runArgs, args...)
 
 	if err := shx.RunV(golangciCmd, runArgs...); err != nil {

@@ -58,12 +58,19 @@ func compress(preserveRootDirStructure bool, tarFilePath, tarContentsPath string
 	tarWriter := tar.NewWriter(gzipWriter)
 	defer tarWriter.Close()
 
+	root, err := os.OpenRoot(tarContentsPath)
+	if err != nil {
+		return fmt.Errorf("opening root %q: %w", tarContentsPath, err)
+	}
+	defer root.Close()
+
 	if err := filepath.Walk(tarContentsPath, func(filePath string, fileInfo os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
 		var link string
+
 		isLink := fileInfo.Mode()&os.ModeSymlink == os.ModeSymlink
 		if isLink {
 			link, err = os.Readlink(filePath)
@@ -105,6 +112,7 @@ func compress(preserveRootDirStructure bool, tarFilePath, tarContentsPath string
 		if !preserveRootDirStructure {
 			dropPath = tarContentsPath
 		}
+
 		header.Name = strings.TrimLeft(
 			strings.TrimPrefix(filePath, dropPath),
 			string(filepath.Separator),
@@ -116,7 +124,12 @@ func compress(preserveRootDirStructure bool, tarFilePath, tarContentsPath string
 		}
 
 		if !isLink {
-			file, err := os.Open(filePath)
+			relPath, err := filepath.Rel(tarContentsPath, filePath)
+			if err != nil {
+				return fmt.Errorf("computing relative path for %q: %w", filePath, err)
+			}
+
+			file, err := root.Open(relPath)
 			if err != nil {
 				return fmt.Errorf("open file %q: %w", filePath, err)
 			}
