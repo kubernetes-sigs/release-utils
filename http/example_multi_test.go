@@ -38,7 +38,7 @@ func Example() {
 		"https://live.staticflickr.com/65535/53862636262_3ec860a652.jpg",
 		"https://live.staticflickr.com/65535/53863034561_079ea0a87b_z.jpg",
 		"https://live.staticflickr.com/65535/53862940596_5a991b2271_w.jpg",
-		"https://live.staticflickr.com/65535/53863423169_90f8e13b7f_z",
+		"https://live.staticflickr.com/65535/53863423169_90f8e13b7f_z.jpg",
 		"https://live.staticflickr.com/65535/53863136849_965bd39df1_n.jpg",
 		"https://live.staticflickr.com/65535/53863672556_1050bbf01b_n.jpg",
 	}

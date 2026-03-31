@@ -88,9 +88,11 @@ var defaultAgentOptions = &agentOptions{
 
 // NewAgent return a new agent with default options.
 func NewAgent() *Agent {
+	opts := *defaultAgentOptions
+
 	return &Agent{
 		AgentImplementation: &defaultAgentImplementation{},
-		options:             defaultAgentOptions,
+		options:             &opts,
 	}
 }
 
