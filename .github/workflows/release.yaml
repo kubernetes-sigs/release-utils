@@ -36,7 +36,7 @@ jobs:
           cache: false
 
       - name: Install bom
-        uses: kubernetes-sigs/release-actions/setup-bom@ab33480f30919958240822cfc29af8d9903f313b # v0.4.1
+        uses: kubernetes-sigs/release-actions/setup-bom@8753ea6bdadb814d779c6ec34eaca689dbfb492b # v0.4.3
 
       - name: Generate SBOM
         shell: bash
@@ -44,7 +44,7 @@ jobs:
           bom generate -c .bom.yaml --format=json -o /tmp/sigs.k8s.io-release-utils-$TAG.spdx.json .
 
       - name: Publish Release
-        uses: kubernetes-sigs/release-actions/publish-release@ab33480f30919958240822cfc29af8d9903f313b # v0.4.1
+        uses: kubernetes-sigs/release-actions/publish-release@8753ea6bdadb814d779c6ec34eaca689dbfb492b # v0.4.3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
