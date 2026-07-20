@@ -21,7 +21,7 @@ jobs:
           echo "TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       - name: Check out code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
 
@@ -36,7 +36,7 @@ jobs:
           cache: false
 
       - name: Install bom
-        uses: kubernetes-sigs/release-actions/setup-bom@8753ea6bdadb814d779c6ec34eaca689dbfb492b # v0.4.3
+        uses: kubernetes-sigs/release-actions/setup-bom@c130b4494862d330a1aa4de320076c666d0708da # v0.4.4
 
       - name: Generate SBOM
         shell: bash
@@ -44,7 +44,7 @@ jobs:
           bom generate -c .bom.yaml --format=json -o /tmp/sigs.k8s.io-release-utils-$TAG.spdx.json .
 
       - name: Publish Release
-        uses: kubernetes-sigs/release-actions/publish-release@8753ea6bdadb814d779c6ec34eaca689dbfb492b # v0.4.3
+        uses: kubernetes-sigs/release-actions/publish-release@c130b4494862d330a1aa4de320076c666d0708da # v0.4.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
