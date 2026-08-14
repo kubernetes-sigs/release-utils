@@ -95,6 +95,7 @@ func NewAgent() *Agent {
 	return &Agent{
 		AgentImplementation: &defaultAgentImplementation{},
 		options:             &opts,
+		client:              &http.Client{Timeout: opts.Timeout},
 	}
 }
 
@@ -103,9 +104,13 @@ func (a *Agent) SetImplementation(impl AgentImplementation) {
 	a.AgentImplementation = impl
 }
 
-// WithTimeout sets the agent timeout.
+// WithTimeout sets the agent timeout. The new value is also written to the
+// agent's http client, so it must not be called while requests are in flight.
 func (a *Agent) WithTimeout(timeout time.Duration) *Agent {
 	a.options.Timeout = timeout
+	if a.client != nil {
+		a.client.Timeout = timeout
+	}
 
 	return a
 }
@@ -146,20 +151,30 @@ func (a *Agent) WithMaxParallel(workers int) *Agent {
 	return a
 }
 
-// WithClient allows callers to set a custom http client in the agent.
+// WithClient allows callers to set a custom http client in the agent. The
+// agent's timeout is set on it, as it is on the default client; adjust it
+// with WithTimeout.
+//
+// Note: this overwrites the timeout on the provided client. If the same
+// client is shared across agents, the last agent to call WithClient (or
+// WithTimeout) sets the timeout for all of them.
 func (a *Agent) WithClient(c *http.Client) *Agent {
+	if c != nil {
+		c.Timeout = a.options.Timeout
+	}
+
 	a.client = c
 
 	return a
 }
 
-// Client return an net/http client preconfigured with the agent options.
+// Client returns the net/http client preconfigured with the agent options.
+// The client is created with the agent and configured by the With* options,
+// so calling this while requests are in flight is safe.
 func (a *Agent) Client() *http.Client {
 	if a.client == nil {
-		a.client = http.DefaultClient
+		a.client = &http.Client{Timeout: a.options.Timeout}
 	}
-
-	a.client.Timeout = a.options.Timeout
 
 	return a.client
 }
@@ -433,10 +448,12 @@ func (a *Agent) GetRequestGroup(urls []string) ([]*http.Response, []error) {
 	errs := make([]error, len(urls))
 	m := sync.Mutex{}
 
+	client := a.Client()
+
 	for i := range urls {
 		go func(url string) {
 			//nolint: bodyclose // We don't close here as we're returning the response
-			resp, err := a.SendGetRequest(a.Client(), url)
+			resp, err := a.SendGetRequest(client, url)
 
 			m.Lock()
 
@@ -477,12 +494,13 @@ func (a *Agent) PostRequestGroup(urls []string, postData [][]byte) ([]*http.Resp
 	//nolint:gosec // integer overflow highly unlikely
 	t := throttler.New(int(a.options.MaxParallel), len(urls))
 	m := sync.Mutex{}
+	client := a.Client()
 
 	for i := range urls {
 		go func(url string, pdata []byte) {
 			//nolint: bodyclose // We don't close here as we're returning the raw response
 			resp, err := a.SendPostRequest(
-				a.Client(), url, pdata, a.options.PostContentType,
+				client, url, pdata, a.options.PostContentType,
 			)
 
 			m.Lock()

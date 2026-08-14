@@ -18,10 +18,12 @@ package http_test
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -180,4 +182,60 @@ func TestWithClient(t *testing.T) {
 	response, err := agent.Get(server.URL)
 	require.NoError(t, err)
 	assert.Equal(t, "custom-client-response", string(response))
+}
+
+// TestClientConfiguredByOptions verifies the agent's timeout lands on the
+// client at configure time, whatever the order of the With calls. Client()
+// itself no longer configures anything: the goroutines the group methods
+// spawn call it concurrently, so it has to be a read.
+func TestClientConfiguredByOptions(t *testing.T) {
+	agent := rhttp.NewAgent().WithTimeout(9 * time.Second)
+	assert.Equal(t, 9*time.Second, agent.Client().Timeout)
+
+	// A custom client picks up the timeout already set...
+	custom := &http.Client{}
+	agent.WithClient(custom)
+	assert.Equal(t, 9*time.Second, custom.Timeout)
+
+	// ...and one set afterwards.
+	agent.WithTimeout(11 * time.Second)
+	assert.Equal(t, 11*time.Second, custom.Timeout)
+}
+
+// TestClientLeavesDefaultClientAlone guards against the agent adopting
+// http.DefaultClient as its own, as it used to when no custom client was
+// set: stamping the agent's timeout on it silently reconfigured every other
+// user of the process-wide default.
+func TestClientLeavesDefaultClientAlone(t *testing.T) {
+	before := http.DefaultClient.Timeout
+
+	agent := rhttp.NewAgent().WithTimeout(42 * time.Second)
+	require.NotSame(t, http.DefaultClient, agent.Client())
+	assert.Equal(t, before, http.DefaultClient.Timeout)
+}
+
+// TestGetGroupParallel fetches a group through a real server with real
+// parallelism. Under the race detector it is the regression test for the
+// data race the group methods used to have: every goroutine they spawned
+// called Client(), which wrote the lazily-adopted client and its timeout
+// on every call.
+func TestGetGroupParallel(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(r.URL.Path)) //nolint:errcheck,gosec // test server echoing the path back
+	}))
+	defer server.Close()
+
+	urls := make([]string, 20)
+	for i := range urls {
+		urls[i] = fmt.Sprintf("%s/%d", server.URL, i)
+	}
+
+	agent := rhttp.NewAgent().WithMaxParallel(4)
+	bodies, errs := agent.GetGroup(urls)
+	require.Len(t, bodies, len(urls))
+
+	for i := range urls {
+		require.NoError(t, errs[i])
+		assert.Equal(t, fmt.Sprintf("/%d", i), string(bodies[i]))
+	}
 }
