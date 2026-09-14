@@ -1,12 +1,12 @@
 module sigs.k8s.io/release-utils
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/avast/retry-go/v4 v4.7.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.12.2
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.13.0
 	github.com/moby/term v0.5.2
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481
 	github.com/olekukonko/tablewriter v1.1.4
@@ -34,9 +34,9 @@ require (
 	github.com/olekukonko/ll v0.1.6 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/mod v0.34.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
-	golang.org/x/tools v0.43.0 // indirect
+	golang.org/x/mod v0.41.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/tools v0.50.0 // indirect
 )
