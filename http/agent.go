@@ -48,13 +48,15 @@ type Agent struct {
 	AgentImplementation
 }
 
-// AgentImplementation is the actual implementation of the http calls
+// AgentImplementation is the actual implementation of the http calls. Every
+// request is built from the context it receives, so cancelling the context
+// or reaching its deadline aborts the request in flight.
 //
 //counterfeiter:generate . AgentImplementation
 type AgentImplementation interface {
-	SendPostRequest(*http.Client, string, []byte, string) (*http.Response, error)
-	SendGetRequest(*http.Client, string) (*http.Response, error)
-	SendHeadRequest(*http.Client, string) (*http.Response, error)
+	SendPostRequest(context.Context, *http.Client, string, []byte, string) (*http.Response, error)
+	SendGetRequest(context.Context, *http.Client, string) (*http.Response, error)
+	SendHeadRequest(context.Context, *http.Client, string) (*http.Response, error)
 }
 
 type defaultAgentImplementation struct{}
@@ -181,12 +183,14 @@ func (a *Agent) Client() *http.Client {
 
 // Get returns the body a GET request.
 func (a *Agent) Get(u string) (content []byte, err error) {
+	ctx := context.Background()
+
 	var b bytes.Buffer
 
-	err = a.retryOperation(func() error {
+	err = a.retryOperation(ctx, func() error {
 		b.Reset()
 
-		resp, sendErr := a.SendGetRequest(a.Client(), u)
+		resp, sendErr := a.SendGetRequest(ctx, a.Client(), u)
 		if retryErr := shouldRetry(resp, sendErr); retryErr != nil {
 			if resp != nil {
 				resp.Body.Close()
@@ -213,8 +217,10 @@ func (a *Agent) Get(u string) (content []byte, err error) {
 func (a *Agent) GetRequest(u string) (response *http.Response, err error) {
 	logrus.Debugf("Sending GET request to %s", u)
 
-	return a.retryRequest(func() (*http.Response, error) {
-		return a.SendGetRequest(a.Client(), u)
+	ctx := context.Background()
+
+	return a.retryRequest(ctx, func() (*http.Response, error) {
+		return a.SendGetRequest(ctx, a.Client(), u)
 	})
 }
 
@@ -233,12 +239,17 @@ func (a *Agent) Post(u string, postData []byte) (content []byte, err error) {
 func (a *Agent) PostRequest(u string, postData []byte) (response *http.Response, err error) {
 	logrus.Debugf("Sending POST request to %s", u)
 
-	return a.retryRequest(func() (*http.Response, error) {
-		return a.SendPostRequest(a.Client(), u, postData, a.options.PostContentType)
+	ctx := context.Background()
+
+	return a.retryRequest(ctx, func() (*http.Response, error) {
+		return a.SendPostRequest(ctx, a.Client(), u, postData, a.options.PostContentType)
 	})
 }
 
-func (a *Agent) retryRequest(do func() (*http.Response, error)) (response *http.Response, err error) {
+// retryRequest retries a request using the agent's retry settings. Once the
+// context is done no further attempts are made, including waiting out a
+// backoff delay, and the context error is returned.
+func (a *Agent) retryRequest(ctx context.Context, do func() (*http.Response, error)) (response *http.Response, err error) {
 	if a.options.Retries == 0 {
 		return do()
 	}
@@ -249,6 +260,7 @@ func (a *Agent) retryRequest(do func() (*http.Response, error)) (response *http.
 
 		return shouldRetry(response, err)
 	},
+		retry.Context(ctx),
 		retry.Attempts(a.options.Retries),
 		retry.Delay(a.options.WaitTime),
 		retry.MaxDelay(a.options.MaxWaitTime),
@@ -262,12 +274,15 @@ func (a *Agent) retryRequest(do func() (*http.Response, error)) (response *http.
 }
 
 // retryOperation retries a generic operation using the agent's retry settings.
-func (a *Agent) retryOperation(do func() error) error {
+// Once the context is done no further attempts are made, including waiting
+// out a backoff delay, and the context error is returned.
+func (a *Agent) retryOperation(ctx context.Context, do func() error) error {
 	if a.options.Retries == 0 {
 		return do()
 	}
 
 	return retry.Do(do,
+		retry.Context(ctx),
 		retry.Attempts(a.options.Retries),
 		retry.Delay(a.options.WaitTime),
 		retry.MaxDelay(a.options.MaxWaitTime),
@@ -315,12 +330,19 @@ func (a *Agent) Head(u string) (content []byte, err error) {
 
 // HeadRequest sends a HEAD request to a URL and returns the request and response.
 func (a *Agent) HeadRequest(u string) (response *http.Response, err error) {
+	return a.headRequest(context.Background(), u)
+}
+
+// headRequest sends a HEAD request, retrying with exponential backoff. Once
+// the context is done no further attempts are made, including waiting out a
+// backoff delay.
+func (a *Agent) headRequest(ctx context.Context, u string) (response *http.Response, err error) {
 	logrus.Debugf("Sending HEAD request to %s", u)
 
 	var try uint
 
 	for {
-		response, err = a.SendHeadRequest(a.Client(), u)
+		response, err = a.SendHeadRequest(ctx, a.Client(), u)
 		try++
 
 		if err == nil || try >= a.options.Retries {
@@ -337,19 +359,35 @@ func (a *Agent) HeadRequest(u string) (response *http.Response, err error) {
 			"Error getting URL (will retry %d more times in %.0f secs): %s",
 			a.options.Retries-try, waitTime, err.Error(),
 		)
-		time.Sleep(time.Duration(waitTime) * time.Second)
+
+		// Wait out the backoff unless the context ends first.
+		timer := time.NewTimer(time.Duration(waitTime) * time.Second)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+
+			return response, fmt.Errorf("%w (last error: %w)", ctx.Err(), err)
+		case <-timer.C:
+		}
 	}
 }
 
 // SendPostRequest sends the actual HTTP post to the server.
 func (impl *defaultAgentImplementation) SendPostRequest(
-	client *http.Client, u string, postData []byte, contentType string,
+	ctx context.Context, client *http.Client, u string, postData []byte, contentType string,
 ) (response *http.Response, err error) {
 	if contentType == "" {
 		contentType = defaultPostContentType
 	}
 
-	response, err = client.Post(u, contentType, bytes.NewBuffer(postData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(postData))
+	if err != nil {
+		return nil, fmt.Errorf("building post request to %s: %w", u, err)
+	}
+
+	req.Header.Set("Content-Type", contentType)
+
+	response, err = client.Do(req)
 	if err != nil {
 		return response, fmt.Errorf("posting data to %s: %w", u, err)
 	}
@@ -358,10 +396,15 @@ func (impl *defaultAgentImplementation) SendPostRequest(
 }
 
 // SendGetRequest performs the actual request.
-func (impl *defaultAgentImplementation) SendGetRequest(client *http.Client, u string) (
-	response *http.Response, err error,
-) {
-	response, err = client.Get(u)
+func (impl *defaultAgentImplementation) SendGetRequest(
+	ctx context.Context, client *http.Client, u string,
+) (response *http.Response, err error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("building get request to %s: %w", u, err)
+	}
+
+	response, err = client.Do(req)
 	if err != nil {
 		return response, fmt.Errorf("getting %s: %w", u, err)
 	}
@@ -370,10 +413,15 @@ func (impl *defaultAgentImplementation) SendGetRequest(client *http.Client, u st
 }
 
 // SendHeadRequest performs the actual request.
-func (impl *defaultAgentImplementation) SendHeadRequest(client *http.Client, u string) (
-	response *http.Response, err error,
-) {
-	response, err = client.Head(u)
+func (impl *defaultAgentImplementation) SendHeadRequest(
+	ctx context.Context, client *http.Client, u string,
+) (response *http.Response, err error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, u, http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("building head request to %s: %w", u, err)
+	}
+
+	response, err = client.Do(req)
 	if err != nil {
 		return response, fmt.Errorf("sending head request %s: %w", u, err)
 	}
@@ -420,7 +468,7 @@ func (a *Agent) readResponse(response *http.Response, w io.Writer) (err error) {
 
 // GetToWriter sends a get request and writes the response to an io.Writer.
 func (a *Agent) GetToWriter(w io.Writer, u string) error {
-	resp, err := a.SendGetRequest(a.Client(), u)
+	resp, err := a.SendGetRequest(context.Background(), a.Client(), u)
 	if err != nil {
 		return fmt.Errorf("sending GET request: %w", err)
 	}
@@ -430,7 +478,7 @@ func (a *Agent) GetToWriter(w io.Writer, u string) error {
 
 // PostToWriter sends a request to a url and writes the response to an io.Writer.
 func (a *Agent) PostToWriter(w io.Writer, u string, postData []byte) error {
-	resp, err := a.SendPostRequest(a.Client(), u, postData, a.options.PostContentType)
+	resp, err := a.SendPostRequest(context.Background(), a.Client(), u, postData, a.options.PostContentType)
 	if err != nil {
 		return fmt.Errorf("sending POST request: %w", err)
 	}
@@ -449,11 +497,12 @@ func (a *Agent) GetRequestGroup(urls []string) ([]*http.Response, []error) {
 	m := sync.Mutex{}
 
 	client := a.Client()
+	ctx := context.Background()
 
 	for i := range urls {
 		go func(url string) {
 			//nolint: bodyclose // We don't close here as we're returning the response
-			resp, err := a.SendGetRequest(client, url)
+			resp, err := a.SendGetRequest(ctx, client, url)
 
 			m.Lock()
 
@@ -495,12 +544,13 @@ func (a *Agent) PostRequestGroup(urls []string, postData [][]byte) ([]*http.Resp
 	t := throttler.New(int(a.options.MaxParallel), len(urls))
 	m := sync.Mutex{}
 	client := a.Client()
+	ctx := context.Background()
 
 	for i := range urls {
 		go func(url string, pdata []byte) {
 			//nolint: bodyclose // We don't close here as we're returning the raw response
 			resp, err := a.SendPostRequest(
-				client, url, pdata, a.options.PostContentType,
+				ctx, client, url, pdata, a.options.PostContentType,
 			)
 
 			m.Lock()
