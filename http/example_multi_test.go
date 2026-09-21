@@ -17,51 +17,61 @@ limitations under the License.
 package http_test
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
-	"os"
-
-	"github.com/sirupsen/logrus"
+	nethttp "net/http"
+	"net/http/httptest"
 
 	"sigs.k8s.io/release-utils/http"
 )
 
 func Example() {
-	// This example fetches 10 photographs from flick in parallel
-	agent := http.NewAgent()
-	urls := []string{
-		"https://live.staticflickr.com/65535/53863838503_3490725fab.jpg",
-		"https://live.staticflickr.com/65535/53862224352_a9949bb818.jpg",
-		"https://live.staticflickr.com/65535/53863076331_570818d62f_w.jpg",
-		"https://live.staticflickr.com/65535/53863751331_aa8cc7c233_w.jpg",
-		"https://live.staticflickr.com/65535/53862636262_3ec860a652.jpg",
-		"https://live.staticflickr.com/65535/53863034561_079ea0a87b_z.jpg",
-		"https://live.staticflickr.com/65535/53862940596_5a991b2271_w.jpg",
-		"https://live.staticflickr.com/65535/53863423169_90f8e13b7f_z.jpg",
-		"https://live.staticflickr.com/65535/53863136849_965bd39df1_n.jpg",
-		"https://live.staticflickr.com/65535/53863672556_1050bbf01b_n.jpg",
-	}
-	w := make([]io.Writer, 0, len(urls))
+	// This example fetches ten photographs in parallel, each into its own
+	// writer. The photographs come from a local test server so the example
+	// runs anywhere; point the URLs at any server to fetch real content.
+	server := httptest.NewServer(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
+		fmt.Fprintf(w, "photo %s", r.URL.Path) //nolint:gosec // test server echoing the path back
+	}))
+	defer server.Close()
 
+	urls := make([]string, 10)
 	for i := range urls {
-		f, err := os.Create(fmt.Sprintf("/tmp/photo-%d.jpg", i))
-		if err != nil {
-			logrus.Fatal("error opening file")
-		}
-
-		w = append(w, f)
+		urls[i] = fmt.Sprintf("%s/photo-%d.jpg", server.URL, i)
 	}
 
-	defer func() {
-		for i := range w {
-			w[i].(*os.File).Close()
-		}
-	}()
+	// Fetch two photographs at a time.
+	agent := http.NewAgent().WithMaxParallel(2)
 
-	errs := agent.GetToWriterGroup(w, urls)
-	if errors.Join(errs...) != nil {
-		logrus.Fatalf("%d errors fetching photos: %v", len(errs), errors.Join(errs...))
+	// One writer per URL, filled in the same order as the URLs.
+	buffers := make([]bytes.Buffer, len(urls))
+	writers := make([]io.Writer, 0, len(urls))
+
+	for i := range buffers {
+		writers = append(writers, &buffers[i])
 	}
-	// output:
+
+	errs := agent.GetToWriterGroup(writers, urls)
+	if err := errors.Join(errs...); err != nil {
+		fmt.Println("fetching photos:", err)
+
+		return
+	}
+
+	for i := range buffers {
+		fmt.Println(buffers[i].String())
+	}
+
+	// Output:
+	// photo /photo-0.jpg
+	// photo /photo-1.jpg
+	// photo /photo-2.jpg
+	// photo /photo-3.jpg
+	// photo /photo-4.jpg
+	// photo /photo-5.jpg
+	// photo /photo-6.jpg
+	// photo /photo-7.jpg
+	// photo /photo-8.jpg
+	// photo /photo-9.jpg
 }

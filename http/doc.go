@@ -96,7 +96,7 @@ a single output sink (ie all output to STDOUT).
 
 # Example
 
-The following example shows a code snippet that fetches ten photographs in parallel
-and writes them to disk.
+The following example shows a code snippet that fetches ten photographs in parallel,
+each into its own writer.
 */
 package http
