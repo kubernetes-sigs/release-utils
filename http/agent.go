@@ -108,6 +108,11 @@ func (a *Agent) SetImplementation(impl AgentImplementation) {
 
 // WithTimeout sets the agent timeout. The new value is also written to the
 // agent's http client, so it must not be called while requests are in flight.
+//
+// The timeout applies to each request attempt on its own. It works alongside
+// the context passed to the Context methods: both limits apply and the
+// earliest one wins. Set it to zero to let the context alone govern how long
+// an operation may take.
 func (a *Agent) WithTimeout(timeout time.Duration) *Agent {
 	a.options.Timeout = timeout
 	if a.client != nil {
