@@ -187,7 +187,7 @@ func TestHeadRequestBackoffHonorsContext(t *testing.T) {
 	defer cancel()
 
 	start := time.Now()
-	_, err := agent.headRequest(ctx, "http://example.com/") //nolint:bodyclose // errors carry no body
+	_, err := agent.HeadRequestContext(ctx, "http://example.com/") //nolint:bodyclose // errors carry no body
 	require.ErrorIs(t, err, context.DeadlineExceeded)
 	assert.Less(t, time.Since(start), time.Second, "backoff must be interrupted by the context")
 }
