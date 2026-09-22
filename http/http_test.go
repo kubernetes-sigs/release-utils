@@ -18,6 +18,7 @@ package http_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -346,7 +347,7 @@ func TestAgentGroupGetRequest(t *testing.T) {
 	fake := &httpfakes.FakeAgentImplementation{}
 	fakeUrls := []string{"http://www/1", "http://www/2", "http://www/3"}
 
-	fake.SendGetRequestCalls(func(_ *http.Client, s string) (*http.Response, error) {
+	fake.SendGetRequestCalls(func(_ context.Context, _ *http.Client, s string) (*http.Response, error) {
 		switch s {
 		case fakeUrls[0]:
 			return &http.Response{
@@ -410,7 +411,7 @@ func TestAgentPostRequestGroup(t *testing.T) {
 	httpErrorURL := "fake:httpError"
 	noErrorURL := "fake:ok"
 
-	fake.SendPostRequestCalls(func(_ *http.Client, s string, _ []byte, _ string) (*http.Response, error) {
+	fake.SendPostRequestCalls(func(_ context.Context, _ *http.Client, s string, _ []byte, _ string) (*http.Response, error) {
 		switch s {
 		case noErrorURL:
 			return &http.Response{

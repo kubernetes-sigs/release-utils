@@ -24,12 +24,13 @@ that return the raw http.Response, the response contents as a byte slice or to
 write the response to a writer.
 
 Each of these functions also provide a _Group_ equivalent that takes a list
-of URLs and performs the requests in parallel. The easiest way to understand
-the functions is this expression:
+of URLs and performs the requests in parallel, and a _Context_ equivalent
+that takes a context.Context as its first argument. The easiest way to
+understand the functions is this expression:
 
-	METHOD[Request|ToWriter][Group]
+	METHOD[Request|ToWriter][Group][Context]
 
-So, for examaple, the functions for the POST method include the following
+So, for example, the functions for the POST method include the following
 variations, note that the Group variants take and return the same arguments
 but in plural form, ie same type but a slice:
 
@@ -39,6 +40,31 @@ but in plural form, ie same type but a slice:
 	PostGroup([]string urls, [][]byte postData) ([][]byte, []error)
 	PostRequestGroup([]string urls, [][]byte postData) ([]*http.Response, []error)
 	PostToWriterGroup([]io.Writer w, []string urls, [][]byte postData) []error
+
+Each of them has a Context variant with the same arguments after the context:
+
+	PostContext(context.Context ctx, string url, []byte postData) ([]byte, error)
+	PostGroupContext(context.Context ctx, []string urls, [][]byte postData) ([][]byte, []error)
+
+The functions without a context are equivalent to calling the Context variant
+with context.Background().
+
+# Cancellation and Timeouts
+
+The Context variants honor the context for the whole operation: cancelling it
+or reaching its deadline aborts the request in flight, stops any further retry
+and interrupts a retry backoff that is waiting. In a Group request every
+request in the group is aborted. The returned error wraps the context error,
+so it can be checked with errors.Is(err, context.Canceled) or
+errors.Is(err, context.DeadlineExceeded).
+
+The context works alongside the agent's own timeout, which is set with
+.WithTimeout() and applies to each request attempt individually. Both limits
+apply and the earliest one wins. To let the context alone govern how long an
+operation may take, disable the per-request timeout:
+
+	agent := http.NewAgent().WithTimeout(0)
+	data, err := agent.GetContext(ctx, url)
 
 # Group Requests
 
@@ -70,7 +96,7 @@ a single output sink (ie all output to STDOUT).
 
 # Example
 
-The following example shows a code snippet that fetches ten photographs in parallel
-and writes them to disk.
+The following example shows a code snippet that fetches ten photographs in parallel,
+each into its own writer.
 */
 package http

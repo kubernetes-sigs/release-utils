@@ -48,13 +48,15 @@ type Agent struct {
 	AgentImplementation
 }
 
-// AgentImplementation is the actual implementation of the http calls
+// AgentImplementation is the actual implementation of the http calls. Every
+// request is built from the context it receives, so cancelling the context
+// or reaching its deadline aborts the request in flight.
 //
 //counterfeiter:generate . AgentImplementation
 type AgentImplementation interface {
-	SendPostRequest(*http.Client, string, []byte, string) (*http.Response, error)
-	SendGetRequest(*http.Client, string) (*http.Response, error)
-	SendHeadRequest(*http.Client, string) (*http.Response, error)
+	SendPostRequest(context.Context, *http.Client, string, []byte, string) (*http.Response, error)
+	SendGetRequest(context.Context, *http.Client, string) (*http.Response, error)
+	SendHeadRequest(context.Context, *http.Client, string) (*http.Response, error)
 }
 
 type defaultAgentImplementation struct{}
@@ -106,6 +108,11 @@ func (a *Agent) SetImplementation(impl AgentImplementation) {
 
 // WithTimeout sets the agent timeout. The new value is also written to the
 // agent's http client, so it must not be called while requests are in flight.
+//
+// The timeout applies to each request attempt on its own. It works alongside
+// the context passed to the Context methods: both limits apply and the
+// earliest one wins. Set it to zero to let the context alone govern how long
+// an operation may take.
 func (a *Agent) WithTimeout(timeout time.Duration) *Agent {
 	a.options.Timeout = timeout
 	if a.client != nil {
@@ -179,14 +186,21 @@ func (a *Agent) Client() *http.Client {
 	return a.client
 }
 
-// Get returns the body a GET request.
+// Get returns the body of a GET request. It is GetContext with a background
+// context.
 func (a *Agent) Get(u string) (content []byte, err error) {
+	return a.GetContext(context.Background(), u)
+}
+
+// GetContext returns the body of a GET request. Cancelling the context or
+// reaching its deadline aborts the request, including any retry in progress.
+func (a *Agent) GetContext(ctx context.Context, u string) (content []byte, err error) {
 	var b bytes.Buffer
 
-	err = a.retryOperation(func() error {
+	err = a.retryOperation(ctx, func() error {
 		b.Reset()
 
-		resp, sendErr := a.SendGetRequest(a.Client(), u)
+		resp, sendErr := a.SendGetRequest(ctx, a.Client(), u)
 		if retryErr := shouldRetry(resp, sendErr); retryErr != nil {
 			if resp != nil {
 				resp.Body.Close()
@@ -209,18 +223,33 @@ func (a *Agent) Get(u string) (content []byte, err error) {
 	return b.Bytes(), err
 }
 
-// GetRequest sends a GET request to a URL and returns the request and response.
+// GetRequest sends a GET request to a URL and returns the response. It is
+// GetRequestContext with a background context.
 func (a *Agent) GetRequest(u string) (response *http.Response, err error) {
+	return a.GetRequestContext(context.Background(), u)
+}
+
+// GetRequestContext sends a GET request to a URL and returns the response.
+// Cancelling the context or reaching its deadline aborts the request,
+// including any retry in progress.
+func (a *Agent) GetRequestContext(ctx context.Context, u string) (response *http.Response, err error) {
 	logrus.Debugf("Sending GET request to %s", u)
 
-	return a.retryRequest(func() (*http.Response, error) {
-		return a.SendGetRequest(a.Client(), u)
+	return a.retryRequest(ctx, func() (*http.Response, error) {
+		return a.SendGetRequest(ctx, a.Client(), u)
 	})
 }
 
-// Post returns the body of a POST request.
+// Post returns the body of a POST request. It is PostContext with a
+// background context.
 func (a *Agent) Post(u string, postData []byte) (content []byte, err error) {
-	response, err := a.PostRequest(u, postData)
+	return a.PostContext(context.Background(), u, postData)
+}
+
+// PostContext returns the body of a POST request. Cancelling the context or
+// reaching its deadline aborts the request, including any retry in progress.
+func (a *Agent) PostContext(ctx context.Context, u string, postData []byte) (content []byte, err error) {
+	response, err := a.PostRequestContext(ctx, u, postData)
 	if err != nil {
 		return nil, fmt.Errorf("getting post request: %w", err)
 	}
@@ -229,16 +258,27 @@ func (a *Agent) Post(u string, postData []byte) (content []byte, err error) {
 	return a.readResponseToByteArray(response)
 }
 
-// PostRequest sends the postData in a POST request to a URL and returns the request object.
+// PostRequest sends the postData in a POST request to a URL and returns the
+// response. It is PostRequestContext with a background context.
 func (a *Agent) PostRequest(u string, postData []byte) (response *http.Response, err error) {
+	return a.PostRequestContext(context.Background(), u, postData)
+}
+
+// PostRequestContext sends the postData in a POST request to a URL and returns
+// the response. Cancelling the context or reaching its deadline aborts the
+// request, including any retry in progress.
+func (a *Agent) PostRequestContext(ctx context.Context, u string, postData []byte) (response *http.Response, err error) {
 	logrus.Debugf("Sending POST request to %s", u)
 
-	return a.retryRequest(func() (*http.Response, error) {
-		return a.SendPostRequest(a.Client(), u, postData, a.options.PostContentType)
+	return a.retryRequest(ctx, func() (*http.Response, error) {
+		return a.SendPostRequest(ctx, a.Client(), u, postData, a.options.PostContentType)
 	})
 }
 
-func (a *Agent) retryRequest(do func() (*http.Response, error)) (response *http.Response, err error) {
+// retryRequest retries a request using the agent's retry settings. Once the
+// context is done no further attempts are made, including waiting out a
+// backoff delay, and the context error is returned.
+func (a *Agent) retryRequest(ctx context.Context, do func() (*http.Response, error)) (response *http.Response, err error) {
 	if a.options.Retries == 0 {
 		return do()
 	}
@@ -249,6 +289,7 @@ func (a *Agent) retryRequest(do func() (*http.Response, error)) (response *http.
 
 		return shouldRetry(response, err)
 	},
+		retry.Context(ctx),
 		retry.Attempts(a.options.Retries),
 		retry.Delay(a.options.WaitTime),
 		retry.MaxDelay(a.options.MaxWaitTime),
@@ -262,12 +303,15 @@ func (a *Agent) retryRequest(do func() (*http.Response, error)) (response *http.
 }
 
 // retryOperation retries a generic operation using the agent's retry settings.
-func (a *Agent) retryOperation(do func() error) error {
+// Once the context is done no further attempts are made, including waiting
+// out a backoff delay, and the context error is returned.
+func (a *Agent) retryOperation(ctx context.Context, do func() error) error {
 	if a.options.Retries == 0 {
 		return do()
 	}
 
 	return retry.Do(do,
+		retry.Context(ctx),
 		retry.Attempts(a.options.Retries),
 		retry.Delay(a.options.WaitTime),
 		retry.MaxDelay(a.options.MaxWaitTime),
@@ -302,9 +346,16 @@ func shouldRetryReadError(err error) bool {
 	return errors.As(err, &netErr) && netErr.Timeout() || errors.Is(err, context.DeadlineExceeded)
 }
 
-// Head returns the body of a HEAD request.
+// Head returns the body of a HEAD request. It is HeadContext with a
+// background context.
 func (a *Agent) Head(u string) (content []byte, err error) {
-	response, err := a.HeadRequest(u)
+	return a.HeadContext(context.Background(), u)
+}
+
+// HeadContext returns the body of a HEAD request. Cancelling the context or
+// reaching its deadline aborts the request, including any retry in progress.
+func (a *Agent) HeadContext(ctx context.Context, u string) (content []byte, err error) {
+	response, err := a.HeadRequestContext(ctx, u)
 	if err != nil {
 		return nil, fmt.Errorf("getting head request: %w", err)
 	}
@@ -313,14 +364,22 @@ func (a *Agent) Head(u string) (content []byte, err error) {
 	return a.readResponseToByteArray(response)
 }
 
-// HeadRequest sends a HEAD request to a URL and returns the request and response.
+// HeadRequest sends a HEAD request to a URL and returns the response. It is
+// HeadRequestContext with a background context.
 func (a *Agent) HeadRequest(u string) (response *http.Response, err error) {
+	return a.HeadRequestContext(context.Background(), u)
+}
+
+// HeadRequestContext sends a HEAD request to a URL and returns the response,
+// retrying with exponential backoff. Once the context is done no further
+// attempts are made, including waiting out a backoff delay.
+func (a *Agent) HeadRequestContext(ctx context.Context, u string) (response *http.Response, err error) {
 	logrus.Debugf("Sending HEAD request to %s", u)
 
 	var try uint
 
 	for {
-		response, err = a.SendHeadRequest(a.Client(), u)
+		response, err = a.SendHeadRequest(ctx, a.Client(), u)
 		try++
 
 		if err == nil || try >= a.options.Retries {
@@ -337,19 +396,35 @@ func (a *Agent) HeadRequest(u string) (response *http.Response, err error) {
 			"Error getting URL (will retry %d more times in %.0f secs): %s",
 			a.options.Retries-try, waitTime, err.Error(),
 		)
-		time.Sleep(time.Duration(waitTime) * time.Second)
+
+		// Wait out the backoff unless the context ends first.
+		timer := time.NewTimer(time.Duration(waitTime) * time.Second)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+
+			return response, fmt.Errorf("%w (last error: %w)", ctx.Err(), err)
+		case <-timer.C:
+		}
 	}
 }
 
 // SendPostRequest sends the actual HTTP post to the server.
 func (impl *defaultAgentImplementation) SendPostRequest(
-	client *http.Client, u string, postData []byte, contentType string,
+	ctx context.Context, client *http.Client, u string, postData []byte, contentType string,
 ) (response *http.Response, err error) {
 	if contentType == "" {
 		contentType = defaultPostContentType
 	}
 
-	response, err = client.Post(u, contentType, bytes.NewBuffer(postData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(postData))
+	if err != nil {
+		return nil, fmt.Errorf("building post request to %s: %w", u, err)
+	}
+
+	req.Header.Set("Content-Type", contentType)
+
+	response, err = client.Do(req)
 	if err != nil {
 		return response, fmt.Errorf("posting data to %s: %w", u, err)
 	}
@@ -358,10 +433,15 @@ func (impl *defaultAgentImplementation) SendPostRequest(
 }
 
 // SendGetRequest performs the actual request.
-func (impl *defaultAgentImplementation) SendGetRequest(client *http.Client, u string) (
-	response *http.Response, err error,
-) {
-	response, err = client.Get(u)
+func (impl *defaultAgentImplementation) SendGetRequest(
+	ctx context.Context, client *http.Client, u string,
+) (response *http.Response, err error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("building get request to %s: %w", u, err)
+	}
+
+	response, err = client.Do(req)
 	if err != nil {
 		return response, fmt.Errorf("getting %s: %w", u, err)
 	}
@@ -370,10 +450,15 @@ func (impl *defaultAgentImplementation) SendGetRequest(client *http.Client, u st
 }
 
 // SendHeadRequest performs the actual request.
-func (impl *defaultAgentImplementation) SendHeadRequest(client *http.Client, u string) (
-	response *http.Response, err error,
-) {
-	response, err = client.Head(u)
+func (impl *defaultAgentImplementation) SendHeadRequest(
+	ctx context.Context, client *http.Client, u string,
+) (response *http.Response, err error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, u, http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("building head request to %s: %w", u, err)
+	}
+
+	response, err = client.Do(req)
 	if err != nil {
 		return response, fmt.Errorf("sending head request %s: %w", u, err)
 	}
@@ -418,9 +503,16 @@ func (a *Agent) readResponse(response *http.Response, w io.Writer) (err error) {
 	return err
 }
 
-// GetToWriter sends a get request and writes the response to an io.Writer.
+// GetToWriter sends a GET request and writes the response to an io.Writer.
+// It is GetToWriterContext with a background context.
 func (a *Agent) GetToWriter(w io.Writer, u string) error {
-	resp, err := a.SendGetRequest(a.Client(), u)
+	return a.GetToWriterContext(context.Background(), w, u)
+}
+
+// GetToWriterContext sends a GET request and writes the response to an
+// io.Writer. Cancelling the context or reaching its deadline aborts the request.
+func (a *Agent) GetToWriterContext(ctx context.Context, w io.Writer, u string) error {
+	resp, err := a.SendGetRequest(ctx, a.Client(), u)
 	if err != nil {
 		return fmt.Errorf("sending GET request: %w", err)
 	}
@@ -428,9 +520,16 @@ func (a *Agent) GetToWriter(w io.Writer, u string) error {
 	return a.readResponse(resp, w)
 }
 
-// PostToWriter sends a request to a url and writes the response to an io.Writer.
+// PostToWriter sends a POST request and writes the response to an io.Writer.
+// It is PostToWriterContext with a background context.
 func (a *Agent) PostToWriter(w io.Writer, u string, postData []byte) error {
-	resp, err := a.SendPostRequest(a.Client(), u, postData, a.options.PostContentType)
+	return a.PostToWriterContext(context.Background(), w, u, postData)
+}
+
+// PostToWriterContext sends a POST request and writes the response to an
+// io.Writer. Cancelling the context or reaching its deadline aborts the request.
+func (a *Agent) PostToWriterContext(ctx context.Context, w io.Writer, u string, postData []byte) error {
+	resp, err := a.SendPostRequest(ctx, a.Client(), u, postData, a.options.PostContentType)
 	if err != nil {
 		return fmt.Errorf("sending POST request: %w", err)
 	}
@@ -438,10 +537,20 @@ func (a *Agent) PostToWriter(w io.Writer, u string, postData []byte) error {
 	return a.readResponse(resp, w)
 }
 
-// GetRequestGroup behaves like agent.SendGetRequest() but takes a group of URLs
+// GetRequestGroup behaves like agent.GetRequest() but takes a group of URLs
 // and performs the requests in parallel. The number of simultaneous requests is
-// controlled by options.MaxParallel.
+// controlled by options.MaxParallel. It is GetRequestGroupContext with a
+// background context.
 func (a *Agent) GetRequestGroup(urls []string) ([]*http.Response, []error) {
+	//nolint:bodyclose // The API consumer should close the bodies
+	return a.GetRequestGroupContext(context.Background(), urls)
+}
+
+// GetRequestGroupContext behaves like agent.GetRequestContext() but takes a
+// group of URLs and performs the requests in parallel. The number of
+// simultaneous requests is controlled by options.MaxParallel. Cancelling the
+// context or reaching its deadline aborts every request in the group.
+func (a *Agent) GetRequestGroupContext(ctx context.Context, urls []string) ([]*http.Response, []error) {
 	//nolint:gosec // integer overflow highly unlikely
 	t := throttler.New(int(a.options.MaxParallel), len(urls))
 	ret := make([]*http.Response, len(urls))
@@ -453,7 +562,7 @@ func (a *Agent) GetRequestGroup(urls []string) ([]*http.Response, []error) {
 	for i := range urls {
 		go func(url string) {
 			//nolint: bodyclose // We don't close here as we're returning the response
-			resp, err := a.SendGetRequest(client, url)
+			resp, err := a.SendGetRequest(ctx, client, url)
 
 			m.Lock()
 
@@ -471,14 +580,28 @@ func (a *Agent) GetRequestGroup(urls []string) ([]*http.Response, []error) {
 	return ret, errs
 }
 
-// PostRequestGroup behaves like agent.Post() but takes a group of URLs and performs the
-// requests in parallel. The number of simultaneous requests is controlled by
-// options.MaxParallel.
+// PostRequestGroup behaves like agent.PostRequest() but takes a group of URLs
+// and performs the requests in parallel. The number of simultaneous requests
+// is controlled by options.MaxParallel. It is PostRequestGroupContext with a
+// background context.
 //
 // The list of URLs and postData byte arrays are required to be of equal length.
 // If postData has less elements than the URL list, the function will exit early,
 // failing all requests.
 func (a *Agent) PostRequestGroup(urls []string, postData [][]byte) ([]*http.Response, []error) {
+	//nolint:bodyclose // The API consumer should close the bodies
+	return a.PostRequestGroupContext(context.Background(), urls, postData)
+}
+
+// PostRequestGroupContext behaves like agent.PostRequestContext() but takes a
+// group of URLs and performs the requests in parallel. The number of
+// simultaneous requests is controlled by options.MaxParallel. Cancelling the
+// context or reaching its deadline aborts every request in the group.
+//
+// The list of URLs and postData byte arrays are required to be of equal length.
+// If postData has less elements than the URL list, the function will exit early,
+// failing all requests.
+func (a *Agent) PostRequestGroupContext(ctx context.Context, urls []string, postData [][]byte) ([]*http.Response, []error) {
 	ret := make([]*http.Response, len(urls))
 	errs := make([]error, len(urls))
 	// URLs and postData arrays must be equal in length. If not exit now.
@@ -500,7 +623,7 @@ func (a *Agent) PostRequestGroup(urls []string, postData [][]byte) ([]*http.Resp
 		go func(url string, pdata []byte) {
 			//nolint: bodyclose // We don't close here as we're returning the raw response
 			resp, err := a.SendPostRequest(
-				client, url, pdata, a.options.PostContentType,
+				ctx, client, url, pdata, a.options.PostContentType,
 			)
 
 			m.Lock()
@@ -520,14 +643,26 @@ func (a *Agent) PostRequestGroup(urls []string, postData [][]byte) ([]*http.Resp
 
 // PostGroup behaves just as Post() but takes a group of URLs and performs
 // the requests in parallel. The number of simultaneous requests is controlled by
-// options.MaxParallel.
+// options.MaxParallel. It is PostGroupContext with a background context.
 //
 // The list of URLs and postData byte arrays are expected to be of equal length.
 // If postData has less elements than the url list, those urls without a corresponding
 // postData array will return an error.
 func (a *Agent) PostGroup(urls []string, postData [][]byte) ([][]byte, []error) {
+	return a.PostGroupContext(context.Background(), urls, postData)
+}
+
+// PostGroupContext behaves just as PostContext() but takes a group of URLs and
+// performs the requests in parallel. The number of simultaneous requests is
+// controlled by options.MaxParallel. Cancelling the context or reaching its
+// deadline aborts every request in the group.
+//
+// The list of URLs and postData byte arrays are expected to be of equal length.
+// If postData has less elements than the url list, those urls without a corresponding
+// postData array will return an error.
+func (a *Agent) PostGroupContext(ctx context.Context, urls []string, postData [][]byte) ([][]byte, []error) {
 	//nolint: bodyclose // Next line closes them
-	resps, errs := a.PostRequestGroup(urls, postData)
+	resps, errs := a.PostRequestGroupContext(ctx, urls, postData)
 	defer closeHTTPResponseGroup(resps)
 
 	c := make([][]byte, len(urls))
@@ -561,7 +696,8 @@ func closeHTTPResponseGroup(resps []*http.Response) {
 
 // PostToWriterGroup behaves just as PostToWriter() but takes a group of URLs
 // and performs the requests in parallel. The number of simultaneous requests
-// is controlled by options.MaxParallel.
+// is controlled by options.MaxParallel. It is PostToWriterGroupContext with a
+// background context.
 //
 // The list of URLs and postData byte arrays are expected to be of equal length.
 // If postData has less elements than the url list, those urls without a corresponding
@@ -573,8 +709,26 @@ func closeHTTPResponseGroup(resps []*http.Response) {
 // is missing, in that case the request will return an error. The requests are
 // guaranteed to go into the writer in order.
 func (a *Agent) PostToWriterGroup(w []io.Writer, urls []string, postData [][]byte) []error {
+	return a.PostToWriterGroupContext(context.Background(), w, urls, postData)
+}
+
+// PostToWriterGroupContext behaves just as PostToWriterContext() but takes a
+// group of URLs and performs the requests in parallel. The number of
+// simultaneous requests is controlled by options.MaxParallel. Cancelling the
+// context or reaching its deadline aborts every request in the group.
+//
+// The list of URLs and postData byte arrays are expected to be of equal length.
+// If postData has less elements than the url list, those urls without a corresponding
+// postData array will return an error.
+//
+// If the w writers slice contains a single writer, all the responses will be
+// written to the single writer. If the writers array contains more than one
+// io.Writer, each request will be written to its corresponding writer unless it
+// is missing, in that case the request will return an error. The requests are
+// guaranteed to go into the writer in order.
+func (a *Agent) PostToWriterGroupContext(ctx context.Context, w []io.Writer, urls []string, postData [][]byte) []error {
 	//nolint: bodyclose // Next line closes them
-	resps, errs := a.PostRequestGroup(urls, postData)
+	resps, errs := a.PostRequestGroupContext(ctx, urls, postData)
 	defer closeHTTPResponseGroup(resps)
 
 	for i, r := range resps {
@@ -605,10 +759,18 @@ func (a *Agent) PostToWriterGroup(w []io.Writer, urls []string, postData [][]byt
 
 // GetGroup behaves just as Get() but takes a group of URLs and performs
 // the requests in parallel. The number of simultaneous requests is controlled by
-// options.MaxParallel.
+// options.MaxParallel. It is GetGroupContext with a background context.
 func (a *Agent) GetGroup(urls []string) ([][]byte, []error) {
+	return a.GetGroupContext(context.Background(), urls)
+}
+
+// GetGroupContext behaves just as GetContext() but takes a group of URLs and
+// performs the requests in parallel. The number of simultaneous requests is
+// controlled by options.MaxParallel. Cancelling the context or reaching its
+// deadline aborts every request in the group.
+func (a *Agent) GetGroupContext(ctx context.Context, urls []string) ([][]byte, []error) {
 	//nolint: bodyclose // Next line closes them
-	resps, errs := a.GetRequestGroup(urls)
+	resps, errs := a.GetRequestGroupContext(ctx, urls)
 	defer closeHTTPResponseGroup(resps)
 
 	c := make([][]byte, len(urls))
@@ -631,7 +793,8 @@ func (a *Agent) GetGroup(urls []string) ([][]byte, []error) {
 
 // GetToWriterGroup behaves just as GetToWriter() but takes a group of URLs
 // and performs the requests in parallel. The number of simultaneous requests
-// is controlled by options.MaxParallel.
+// is controlled by options.MaxParallel. It is GetToWriterGroupContext with a
+// background context.
 //
 // If the w writers slice contains a single writer, all the responses will be
 // written to the single writer. If the writers array contains more than one
@@ -639,8 +802,22 @@ func (a *Agent) GetGroup(urls []string) ([][]byte, []error) {
 // is missing in which case the request will return an error. The requests are
 // guaranteed to go into the writer in order.
 func (a *Agent) GetToWriterGroup(w []io.Writer, urls []string) []error {
+	return a.GetToWriterGroupContext(context.Background(), w, urls)
+}
+
+// GetToWriterGroupContext behaves just as GetToWriterContext() but takes a
+// group of URLs and performs the requests in parallel. The number of
+// simultaneous requests is controlled by options.MaxParallel. Cancelling the
+// context or reaching its deadline aborts every request in the group.
+//
+// If the w writers slice contains a single writer, all the responses will be
+// written to the single writer. If the writers array contains more than one
+// io.Writer, each request will be written to its corresponding writer unless it
+// is missing in which case the request will return an error. The requests are
+// guaranteed to go into the writer in order.
+func (a *Agent) GetToWriterGroupContext(ctx context.Context, w []io.Writer, urls []string) []error {
 	//nolint: bodyclose
-	resps, errs := a.GetRequestGroup(urls)
+	resps, errs := a.GetRequestGroupContext(ctx, urls)
 	defer closeHTTPResponseGroup(resps)
 
 	for i, r := range resps {
